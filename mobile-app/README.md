@@ -1,159 +1,108 @@
 # OdontoSmart Mobile
 
-Aplicación móvil de OdontoSmart para consultar información y realizar acciones rápidas en una clínica odontológica. Forma parte de un proyecto que incluye una aplicación web, una API y una base de datos SQL Server.
-
 ## Descripción
 
-OdontoSmart Mobile está orientada al personal interno de la clínica, especialmente odontólogos y personal administrativo. Permite consultar la agenda, información de pacientes, historia clínica y avisos internos desde un teléfono.
+Aplicación móvil complementaria de OdontoSmart, desarrollada con React Native y Expo para el personal interno de una clínica odontológica. Permite consultar información de pacientes y turnos, revisar antecedentes clínicos y realizar acciones breves desde un teléfono.
 
-Actualmente utiliza datos simulados y prioriza Android. No está orientada a pacientes.
-
-## Problemática
-
-La gestión de una clínica requiere consultar información que puede estar distribuida entre diferentes herramientas. El proyecto busca mejorar:
-
-- La consulta rápida de turnos y el seguimiento de su estado.
-- El acceso móvil a datos de pacientes y antecedentes clínicos.
-- La organización de información administrativa y avisos internos.
+Forma parte de una solución que también incluye una aplicación web administrativa, una API REST y una base de datos SQL Server. El desarrollo móvil prioriza Android y no está orientado actualmente a pacientes.
 
 ## Objetivo
 
-Proporcionar acceso rápido y organizado desde dispositivos móviles a las funciones más relevantes de OdontoSmart. Se centra en consultas y acciones breves, como confirmar un turno o revisar un paciente, sin reemplazar completamente la aplicación web administrativa.
+Facilitar el acceso a información relevante de la clínica desde dispositivos móviles y acompañar las tareas de odontólogos y personal administrativo, sin reemplazar la aplicación web.
 
-## Integrantes
+## Funcionalidades
 
-- Benjamín Moris
-- Gonzalo Perea
+- Inicio de sesión con validación local, restauración de sesión y cierre de sesión.
+- Inicio con fecha, resumen de turnos, próximo turno, pacientes recientes y avisos.
+- Agenda por día con búsqueda y filtro de estado.
+- Detalle de turno con datos de atención, contacto y observaciones.
+- Confirmación de turnos, registro de atención y cancelación con confirmación.
+- Listado de pacientes con búsqueda por nombre, DNI o teléfono.
+- Detalle de paciente con datos personales, próximos y últimos turnos.
+- Historia clínica de lectura, ordenada por fecha.
+- Avisos internos con estados leído y no leído.
+- Perfil con información básica del usuario.
+- Tema claro y oscuro con preferencia guardada.
 
-## Tecnologías utilizadas
+La navegación combina cinco pestañas —Inicio, Turnos, Pacientes, Avisos y Perfil— con pantallas de detalle. Al cerrar sesión se retira el contenido autenticado.
 
-- **JavaScript, React y React Native:** desarrollo de la aplicación.
-- **Expo SDK 57:** entorno de desarrollo y exportación.
-- **React Navigation:** navegación con Native Stack y Bottom Tabs.
-- **AsyncStorage:** persistencia local de sesión y preferencia visual.
-- **Ionicons mediante @expo/vector-icons:** iconos de la interfaz.
-- **react-native-safe-area-context y react-native-screens:** soporte de áreas seguras y navegación nativa.
+## Estado de integración
 
-Como herramientas de desarrollo se utilizan ESLint y TypeScript para verificar los archivos JavaScript mediante `checkJs`. Las versiones concretas están en `package.json` y `package-lock.json`.
+Las pantallas consultan servicios asíncronos separados de la interfaz. Actualmente toda la información clínica y administrativa proviene de datos locales; los servicios todavía no realizan solicitudes al backend.
 
-## Arquitectura e integración
+Existe una base HTTP en `src/services/api.js` y la variable `EXPO_PUBLIC_API_URL` está documentada en `.env.example`. Al integrar la API compartida con la web, se reemplazarán las implementaciones de los servicios según los contratos acordados. El backend previsto utiliza ASP.NET Core Web API, Entity Framework Core y SQL Server.
 
-Flujo actual de las consultas:
+Los cambios de estado de turnos y la lectura de avisos se mantienen en memoria y se reinician al recargar la aplicación. La sesión y el tema sí persisten mediante AsyncStorage. La autenticación real sigue pendiente; las credenciales locales están definidas en `src/services/authService.js`.
 
-```text
-OdontoSmart Mobile
-        ↓
-     Services
-        ↓
-Datos locales (mocks)
-```
+## Tecnologías
 
-Las pantallas consumen servicios asíncronos separados de los datos. La sesión y el tema se gestionan mediante contextos; sus preferencias se guardan en AsyncStorage.
+- JavaScript, React y React Native.
+- Expo SDK 57 y Expo Status Bar.
+- React Navigation con Native Stack y Bottom Tabs.
+- AsyncStorage.
+- Ionicons mediante `@expo/vector-icons`.
+- React Native Screens y Safe Area Context.
 
-Integración futura prevista:
-
-```text
-OdontoSmart Mobile / Aplicación web
-                ↓
-       ASP.NET Core Web API
-                ↓
-       Entity Framework Core
-                ↓
-      SQL Server / OdontoSmartDB
-```
-
-Mobile y web consumirán la misma API. ASP.NET Core, Entity Framework Core y SQL Server corresponden a esa integración futura; no son dependencias del proyecto móvil.
-
-Existe una preparación HTTP en `src/services/api.js` y una variable `EXPO_PUBLIC_API_URL` documentada en `.env.example`. Los servicios actuales no utilizan esa conexión ni tienen endpoints definitivos.
-
-## Features y estado actual
-
-**Criterio:** ✅ Implementado indica que el alcance descrito existe en el código; ⚠️ Parcial indica que la interfaz y el flujo local existen, pero falta integración real; ⏳ Pendiente indica que la funcionalidad aún no está desarrollada. Estos estados no sustituyen la validación en dispositivos.
-
-| Feature | Descripción y alcance actual | Estado |
-|---------|------------------------------|--------|
-| Login | Validación de campos y credenciales locales, mostrar/ocultar contraseña. Falta autenticación real. | ⚠️ Parcial |
-| Sesión y cierre de sesión | Restauración del usuario local con AsyncStorage y logout. Falta gestión de sesión del backend. | ⚠️ Parcial |
-| Navegación | Login, cinco pestañas y pantallas de detalle en Stack; árbol autenticado separado. | ✅ Implementado |
-| Dashboard / Inicio | Fecha, turnos de hoy, pendientes, próximo turno, pacientes recientes y avisos con datos locales. | ⚠️ Parcial |
-| Turnos | Consulta por día, filtros por estado y búsqueda por paciente u odontólogo. | ⚠️ Parcial |
-| Detalle de turno | Datos del turno, contacto, observaciones y acceso al paciente. | ⚠️ Parcial |
-| Acciones sobre turnos | Confirmar, marcar atendido y cancelar con confirmación; cambios solo en memoria. | ⚠️ Parcial |
-| Pacientes | Listado y búsqueda por nombre, DNI o teléfono; datos de contacto y cobertura. | ⚠️ Parcial |
-| Detalle de paciente | Datos personales, próximos y últimos turnos y acceso a historia clínica. | ⚠️ Parcial |
-| Historia clínica | Consulta cronológica de registros locales, sin edición. | ⚠️ Parcial |
-| Notificaciones internas | Avisos locales con estados leído/no leído; sin notificaciones push. | ⚠️ Parcial |
-| Perfil | Nombre y cargo locales, usuario de sesión y acceso al cierre de sesión. | ⚠️ Parcial |
-| Tema claro y oscuro | Paletas compartidas y preferencia guardada en AsyncStorage. | ✅ Implementado |
-| Estados de consulta | Componentes reutilizables de carga, error con reintento y ausencia de datos. | ✅ Implementado |
-| Integración con API | Sustitución de datos locales por consultas y operaciones del backend compartido. | ⏳ Pendiente |
-| Autenticación real | Validación de identidad y sesión mediante la API futura. | ⏳ Pendiente |
-
-Actualizar esta tabla al completar cada alcance y su integración, manteniendo separadas las capacidades locales de las operaciones del backend.
-
-## Navegación
-
-```text
-Login
-└── App
-    ├── Inicio
-    ├── Turnos → Detalle del turno → Detalle del paciente
-    ├── Pacientes → Detalle del paciente → Historia clínica
-    ├── Avisos
-    └── Perfil
-```
-
-Los detalles se abren sobre las pestañas. Al cerrar sesión se desmonta la navegación autenticada.
+ESLint y TypeScript se utilizan para revisar el código JavaScript; TypeScript está configurado con `checkJs`. Las versiones concretas se encuentran en `package.json` y `package-lock.json`.
 
 ## Estructura del proyecto
 
 ```text
-mobile-app/
-├── assets/
-├── scripts/
-│   └── check-services.cjs
-├── src/
-│   ├── components/
-│   ├── context/
-│   ├── hooks/
-│   ├── mocks/
-│   ├── navigation/
-│   ├── screens/
-│   ├── services/
-│   ├── styles/
-│   └── utils/
-├── .env.example
-├── App.js
-├── app.json
-├── index.js
-├── package.json
-└── package-lock.json
+src/
+├── components/   Controles, tarjetas y estados compartidos
+├── context/      Sesión y tema
+├── hooks/        Consultas y actualización al recuperar el foco
+├── mocks/        Datos locales
+├── navigation/   Navegación principal y detalles
+├── screens/      Pantallas
+├── services/     Operaciones y acceso a datos
+├── styles/       Paletas y estilos comunes
+└── utils/        Fechas y formatos
 ```
 
-Los componentes comunes incluyen botones, entradas, encabezados, tarjetas de turno, indicadores de estado y modal de confirmación. Las utilidades presentan fechas en formato argentino `dd/mm/yyyy` y horas `HH:mm`.
+La entrada se encuentra en `App.js` e `index.js`; los recursos gráficos están en `assets/` y las comprobaciones de servicios en `scripts/`.
 
-## Instalación y ejecución
+## Instalación
 
 Desde la raíz del repositorio, con Node.js y npm instalados:
 
 ```sh
 cd mobile-app
 npm install
+```
+
+## Ejecución
+
+```sh
 npm start
 ```
 
-El entorno utilizado para las verificaciones fue Node.js 24. Expo muestra un QR en la terminal: abrirlo desde Expo Go compatible con SDK 57 en un Android conectado a la misma red que la computadora. Para acceder desde el teléfono, iniciar sin `--localhost`.
+Expo muestra un QR en la terminal. Para abrir la aplicación en Android, utilizar Expo Go compatible con SDK 57 y conectar el teléfono y la computadora a la misma red. No se necesita una API para ejecutar el estado actual.
 
-Credenciales actuales de acceso local:
+## Funcionalidades y avance
 
-- Usuario: `admin`
-- Contraseña: `1234`
+En las filas marcadas como Parcial, las pantallas y los flujos locales existen, pero falta su integración con el backend.
 
-AsyncStorage guarda únicamente el usuario de sesión, nunca la contraseña. No se necesita configurar una API para ejecutar el estado actual.
+| Funcionalidad | Estado |
+| --- | --- |
+| Inicio y cierre de sesión | Parcial |
+| Navegación principal y detalles | Implementado |
+| Inicio y resumen de la jornada | Parcial |
+| Turnos, detalle y cambios de estado | Parcial |
+| Pacientes y detalle | Parcial |
+| Historia clínica de lectura | Parcial |
+| Avisos internos | Parcial |
+| Perfil | Parcial |
+| Tema claro y oscuro | Implementado |
+| Estados de carga, error y ausencia de datos | Implementado |
+| Integración con API | Pendiente |
+| Autenticación real | Pendiente |
+
+La historia clínica no incluye edición y los avisos no utilizan notificaciones push.
 
 ## Verificación
 
-Comandos disponibles y comprobados durante el desarrollo, ejecutados desde `mobile-app/`:
+Desde `mobile-app/`:
 
 ```sh
 npm run lint
@@ -162,20 +111,19 @@ node scripts/check-services.cjs
 npm run export:android
 ```
 
-Se verificaron lint, tipos, servicios locales, arranque de Metro y exportación Android/Hermes. El script comprueba login/logout con almacenamiento sustituido, fechas, consultas, transiciones de turnos, historia clínica y lectura de avisos.
+El script comprueba sesión, fechas, consultas, cambios de estado, historia clínica y lectura de avisos con almacenamiento sustituido. La exportación Android genera un bundle en `dist/`, no un APK instalable.
 
-La exportación genera un bundle en `dist/`, no un APK instalable. Está pendiente la validación visual y funcional en dispositivos o emuladores Android, incluyendo navegación, teclado, TalkBack, tamaños de pantalla y persistencia del tema.
-
-## Estado actual
-
-OdontoSmart Mobile se encuentra en desarrollo activo. Las pantallas principales, navegación y flujos locales están desarrollados; la integración con la API y la autenticación real siguen pendientes.
-
-Los cambios de estado de turnos y la lectura de avisos se mantienen en memoria y se reinician al recargar la aplicación. La sesión local y el tema sí persisten. La historia clínica es de lectura y los avisos internos utilizan datos predefinidos.
+La validación visual y funcional en dispositivos físicos o emuladores sigue pendiente, incluyendo teclado, accesibilidad, distintos tamaños de pantalla y persistencia del tema.
 
 ## Próximos pasos
 
-- Acordar los contratos de la API compartida con la aplicación web.
-- Reemplazar los mocks por servicios conectados al backend.
+- Completar los contratos e integrar los servicios con la API.
+- Reemplazar los datos locales por información del backend.
 - Incorporar autenticación real y adaptar la gestión de sesión.
-- Validar pantallas y recorridos completos en dispositivos Android.
-- Comprobar accesibilidad, teclado, tamaños de pantalla y manejo de errores con respuestas reales.
+- Validar los recorridos completos en dispositivos Android.
+- Revisar accesibilidad, manejo de errores y presentación en distintos tamaños de pantalla.
+
+## Integrantes
+
+- Benjamín Moris
+- Gonzalo Perea
