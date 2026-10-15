@@ -8,7 +8,6 @@ import { Link } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
 import { version } from '../../package.json';
 import { FiChevronLeft } from 'react-icons/fi';
-import ThemeToggle from '../components/ThemeToggle';
 import useStoredPreference from '../hooks/useStoredPreference';
 import { FiMenu, FiChevronRight } from 'react-icons/fi';
 import { activeModules } from '../config/modules';
@@ -61,7 +60,6 @@ export default function AdminLayout() {
             </nav>
           </div>
           <div className="demo-user">
-            <ThemeToggle />
             <Dropdown align="end">
               <Dropdown.Toggle id="user-menu" className="user-menu-toggle" variant="link" aria-label={`Menú de usuario: ${user.username}`}>
                 <span className="user-avatar">{user.username.slice(0, 2).toUpperCase()}</span>
