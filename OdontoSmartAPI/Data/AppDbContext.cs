@@ -181,6 +181,14 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("HistorialClinico");
 
+            entity.Property(e => e.Anulado).HasDefaultValue(false);
+            entity.Property(e => e.MotivoAnulacion).HasMaxLength(300);
+            entity.Property(e => e.FechaAnulacion)
+                .HasColumnType("datetime2")
+                .HasConversion(
+                    value => value,
+                    value => value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : value);
+
             entity.Property(e => e.Diagnostico)
                 .HasMaxLength(500)
                 .IsUnicode(false);

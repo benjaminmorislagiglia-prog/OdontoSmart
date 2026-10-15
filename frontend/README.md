@@ -17,23 +17,29 @@ Centralizar la gestión diaria de la clínica desde una interfaz clara y accesib
 - Gestión de pacientes: listado, búsqueda, consulta de detalle, registro, modificación y desactivación mediante baja lógica.
 - Agenda con reserva, detalle, modificación, cancelación y consulta del historial de estados.
 - Gestión de odontólogos, días/horarios de atención y asignación de especialidades.
-- Registro y consulta de consultorios, especialidades e historias clínicas.
+- Registro y consulta de consultorios, especialidades e historias clínicas; anulación de historias con motivo y fecha, conservando su contenido.
 - Catálogo de estados de turno y formularios auxiliares de empleados y direcciones.
 - Navegación con menú lateral adaptable, rutas protegidas y página para direcciones inexistentes.
-- Configuración de apariencia (claro, oscuro o sistema), accesibilidad y preferencias de listados, guardadas en el navegador.
+- Tema claro/oscuro desde la barra superior; Configuración con accesibilidad y preferencias de listados guardadas en el navegador.
 - Estados de carga, error y ausencia de datos, notificaciones y confirmación antes de desactivar un paciente.
 
 El acceso todavía no valida la identidad contra el backend. Las credenciales locales de desarrollo están definidas en `src/services/authService.js`.
 
 ## Configuración de la aplicación
 
-La sección Configuración permite elegir el tema, usar texto grande, aumentar el contraste y reducir animaciones. La opción Sistema sigue la apariencia del dispositivo y responde a sus cambios. El botón de tema de la barra superior sigue disponible; al usarlo, se elige explícitamente claro u oscuro.
+La sección Configuración permite usar texto grande, aumentar el contraste y reducir animaciones. El tema se cambia exclusivamente desde el botón claro/oscuro de la barra superior y se conserva al refrescar. Las preferencias anteriores que no sean claro u oscuro se normalizan a claro.
 
 La cantidad de filas (10, 25 o 50) se aplica mediante paginación local a Dashboard, Pacientes, Agenda y los listados de catálogos. Los filtros se aplican al conjunto completo antes de paginar; cambiar un filtro o la cantidad de filas vuelve a la primera página.
 
 Recordar filtros y búsquedas está desactivado inicialmente. Al activarlo, conserva los valores de los controles de esas pantallas; al desactivarlo, elimina los filtros guardados. Las preferencias utilizan `localStorage`, no guardan respuestas de la API ni credenciales y no cambian datos de la clínica. Si el navegador bloquea el almacenamiento, siguen funcionando durante la sesión actual.
 
 Sesión muestra el usuario del contexto de autenticación y permite cerrar sesión con el flujo existente.
+
+## Historia clínica
+
+Al registrar una historia se eligen paciente y turno. Durante la edición esas relaciones están bloqueadas; sólo se modifican diagnóstico, tratamientos y observaciones.
+
+Detalle ofrece Anular registro con confirmación y motivo obligatorio de hasta 300 caracteres. La API guarda el estado, el motivo y la fecha de anulación; el registro sigue en el listado y conserva su contenido. Una historia anulada sólo admite consulta y muestra Anulado, el motivo y la fecha local. La anulación no cancela el turno ni habilita una segunda historia para el mismo turno.
 
 ## Integración con API
 
@@ -106,9 +112,9 @@ El script verifica el contrato y las validaciones con respuestas controladas; no
 | Dashboard | Implementado | Indicadores, agenda y actividad desde la API |
 | Gestión de pacientes | Implementado | Consulta, alta, modificación y baja lógica con catálogos reales |
 | Navegación y temas | Implementado | Menú adaptable, rutas protegidas y preferencias visuales |
-| Configuración | Implementado | Apariencia, accesibilidad, paginación, filtros recordados y cierre de sesión |
+| Configuración | Implementado | Accesibilidad, paginación, filtros recordados y cierre de sesión |
 | Gestión de turnos | Implementado | Reserva, detalle, modificación, cancelación e historial de estados |
-| Historia clínica | Implementado | Registro, consulta y modificación; conserva las relaciones originales |
+| Historia clínica | Implementado | Registro, consulta, modificación y anulación con motivo; conserva contenido y relaciones |
 | Odontólogos y consultorios | Implementado | Gestión conectada a la API, horarios y referencias |
 | Especialidades y estados | Implementado | Catálogos y asignación de especialidades |
 

@@ -11,7 +11,7 @@ Revisión realizada el 15/10/2026 sobre el backend incorporado al repositorio. S
 | Odontólogos | CRUD y horarios existentes; PUT aceptaba empleados inactivos | PUT valida empleado activo y longitudes; web conectada |
 | Especialidades / OdontólogoEspecialidad | Catálogo y asignaciones existentes | Se conservan; gestión y asignación disponibles en web |
 | Consultorios | CRUD y control de relaciones existentes | Se conserva; web conectada |
-| Historia clínica | CRUD con trazabilidad y bloqueo de eliminación existente | Se conserva; validación de longitudes y web conectada |
+| Historia clínica | CRUD con trazabilidad y bloqueo de eliminación existente | Web conectada; anulación con motivo y fecha, conservación del contenido y bloqueo de edición posterior |
 | EstadoTurno | Catálogo existente | Límite de texto acorde a SQL y protección del significado de Cancelado ya utilizado |
 | HistorialEstadoTurno | Historial inmutable existente | Cambios coordinados con agenda; valida disponibilidad al reactivar un turno |
 | PrestacionTurno | Solo relación EF, sin DTOs/controlador ni campos históricos | Se completó modelo, mapeo, DTOs y seis operaciones |
@@ -24,6 +24,8 @@ Revisión realizada el 15/10/2026 sobre el backend incorporado al repositorio. S
 La lectura del resto de controladores, modelos, DTOs, DbContext, Program y scripts no mostró un controlador faltante adicional a PrestacionTurno. La clasificación no implica que todos los casos de cada endpoint estén cubiertos por pruebas.
 
 ## Cambios de backend
+
+- Historia clínica incorpora Anulado, MotivoAnulacion (nvarchar(300)) y FechaAnulacion (datetime2, UTC). El script Actualizacion Historia-Clinica.sql amplía bases existentes de forma idempotente y el script base contiene el mismo esquema para nuevas instalaciones. POST /api/HistorialClinico/{id}/anular exige motivo y conserva contenido, paciente y turno. Los reintentos mantienen la primera anulación; PUT de una historia anulada devuelve 409, con actualización condicional en SQL para cubrir solicitudes simultáneas. Todos los GET mantienen visibles los registros anulados; DELETE físico sigue bloqueado.
 
 - PrestacionTurno refleja FechaRealizacion (date nullable), PrecioAplicado (decimal(18,2) nullable) y GarantiaMesesAplicada (int nullable), según el script. Los valores opcionales conservan compatibilidad con registros anteriores; no se completan precios o garantías automáticamente.
 - Endpoints nuevos: GET/POST /api/prestacionturnos; GET/PUT/DELETE /api/prestacionturnos/{id}; GET /api/prestacionturnos/turno/{idTurno}.
@@ -61,7 +63,7 @@ Sobre una base existente aplicar solamente los scripts idempotentes de Prestacio
 - dotnet build OdontoSmart.sln: correcto, cero errores y cero advertencias.
 - npm run build en frontend: correcto; Vite informa avisos de directivas use client de React Router/React Bootstrap.
 - node scripts/check-pacientes.mjs en frontend: correcto contra el OpenAPI actualizado, con adaptador controlado.
-- scripts/check-api.mjs: 81 comprobaciones HTTP contra la API y SQL Server, incluyendo cinco operaciones de Pacientes, relaciones, PrestacionTurno, stock, vencimientos, reservas simultáneas, conflictos de edición, historial y cancelación.
+- scripts/check-api.mjs: 98 comprobaciones HTTP contra la API y SQL Server, incluyendo Pacientes, relaciones, PrestacionTurno, stock, vencimientos, reservas simultáneas, conflictos de edición, historial, cancelación y anulación de historias clínicas.
 - CORS: preflight desde http://127.0.0.1:5173 devuelve el origen permitido.
 - Navegador: Dashboard real, catálogos de pacientes, edición/refresco de paciente, alta/modificación de especialidad, reserva, detalle, confirmación y cancelación conservando historial.
 - Sin script de lint en frontend. No se agregó una herramienta nueva para esta tarea.

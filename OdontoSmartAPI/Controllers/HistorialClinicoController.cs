@@ -27,7 +27,10 @@ public class HistorialClinicoController : ControllerBase
             IdTurno = historial.IdTurno,
             Diagnostico = historial.Diagnostico,
             TratamientosRealizados = historial.TratamientosRealizados,
-            Observaciones = historial.Observaciones
+            Observaciones = historial.Observaciones,
+            Anulado = historial.Anulado,
+            MotivoAnulacion = historial.MotivoAnulacion,
+            FechaAnulacion = historial.FechaAnulacion
         };
     }
 
@@ -44,7 +47,10 @@ public class HistorialClinicoController : ControllerBase
                 IdTurno = h.IdTurno,
                 Diagnostico = h.Diagnostico,
                 TratamientosRealizados = h.TratamientosRealizados,
-                Observaciones = h.Observaciones
+                Observaciones = h.Observaciones,
+                Anulado = h.Anulado,
+                MotivoAnulacion = h.MotivoAnulacion,
+                FechaAnulacion = h.FechaAnulacion
             })
             .ToListAsync();
 
@@ -93,7 +99,10 @@ public class HistorialClinicoController : ControllerBase
                 IdTurno = h.IdTurno,
                 Diagnostico = h.Diagnostico,
                 TratamientosRealizados = h.TratamientosRealizados,
-                Observaciones = h.Observaciones
+                Observaciones = h.Observaciones,
+                Anulado = h.Anulado,
+                MotivoAnulacion = h.MotivoAnulacion,
+                FechaAnulacion = h.FechaAnulacion
             })
             .ToListAsync();
 
@@ -173,6 +182,11 @@ public class HistorialClinicoController : ControllerBase
                 "No se encontró la historia clínica.");
         }
 
+        if (historial.Anulado)
+        {
+            return Conflict("No se puede modificar una historia clínica anulada.");
+        }
+
         var pacienteExiste = await _context.Pacientes
             .AnyAsync(p => p.IdPaciente == dto.IdPaciente);
 
@@ -206,14 +220,44 @@ public class HistorialClinicoController : ControllerBase
                 "de una historia clínica existente.");
         }
 
-        historial.Diagnostico = dto.Diagnostico;
-        historial.TratamientosRealizados =
-            dto.TratamientosRealizados;
-        historial.Observaciones = dto.Observaciones;
-
-        await _context.SaveChangesAsync();
+        // La condición se evalúa en SQL para impedir ediciones que compitan con una anulación.
+        var updated = await _context.HistorialClinicos
+            .Where(h => h.IdHistorialClinico == id && !h.Anulado)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(h => h.Diagnostico, dto.Diagnostico)
+                .SetProperty(h => h.TratamientosRealizados, dto.TratamientosRealizados)
+                .SetProperty(h => h.Observaciones, dto.Observaciones));
+        if (updated == 0)
+        {
+            return Conflict("La historia clínica ya no admite modificaciones. Volvé a consultarla.");
+        }
 
         return NoContent();
+    }
+
+    // POST: api/historialclinico/1/anular. No altera el contenido clínico.
+    [HttpPost("{id:int}/anular")]
+    public async Task<IActionResult> AnularHistorial(int id, [FromBody] HistorialClinicoAnularDto dto)
+    {
+        var motivo = dto.Motivo.Trim();
+        if (motivo.Length == 0)
+            return BadRequest("Debe indicar el motivo de anulación.");
+
+        var fecha = DateTime.UtcNow;
+        await _context.HistorialClinicos
+            .Where(h => h.IdHistorialClinico == id && !h.Anulado)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(h => h.Anulado, true)
+                .SetProperty(h => h.MotivoAnulacion, motivo)
+                .SetProperty(h => h.FechaAnulacion, (DateTime?)fecha));
+
+        var historial = await _context.HistorialClinicos.AsNoTracking()
+            .FirstOrDefaultAsync(h => h.IdHistorialClinico == id);
+        if (historial == null)
+            return NotFound("No se encontró la historia clínica.");
+
+        // Los reintentos conservan el primer motivo y la primera fecha.
+        return Ok(ConvertirDto(historial));
     }
 
     // 6. DELETE: api/historialclinico/1
@@ -233,7 +277,7 @@ public class HistorialClinicoController : ControllerBase
         {
             mensaje =
                 "No se permite eliminar físicamente una historia clínica. " +
-                "Se debe implementar un mecanismo de anulación " +
+                "Utilizá la acción de anulación " +
                 "que conserve la trazabilidad."
         });
     }

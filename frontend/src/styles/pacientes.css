@@ -7,3 +7,4 @@
 .patient-details { margin-top: 24px; }
 .patient-details dd { margin-bottom: 20px; overflow-wrap: anywhere; }
 .patient-form fieldset { min-width: 0; }
+.clinical-note { white-space: pre-wrap; overflow-wrap: anywhere; }
