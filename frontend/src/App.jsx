@@ -13,6 +13,7 @@ import PacienteFormPage from './pages/PacienteFormPage';
 import AgendaPage from './pages/AgendaPage';
 import ClinicEntityPage from './pages/ClinicEntityPage';
 import { clinicPages } from './config/clinicPages';
+import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
   return (
@@ -28,8 +29,9 @@ export default function App() {
             <Route path="/pacientes/:id" element={<PacienteDetailPage />} />
             <Route path="/pacientes/:id/editar" element={<PacienteFormPage />} />
             <Route path="/agenda" element={<AgendaPage />} />
+            <Route path="/configuracion" element={<SettingsPage />} />
             {[['/odontologos','odontologos'],['/especialidades','especialidades'],['/consultorios','consultorios'],['/historia-clinica','historias'],['/estados-turno','estados'],['/odontologos/especialidades','asociaciones'],['/odontologos/empleados','empleados'],['/pacientes/direcciones','direcciones']].map(([path,key]) => <Route key={path} path={path} element={<ClinicEntityPage key={key} config={clinicPages[key]}/>} />)}
-            {activeModules.filter(item => !['/dashboard', '/pacientes','/agenda','/odontologos','/especialidades','/consultorios','/historia-clinica','/estados-turno'].includes(item.path)).map(item => (
+            {activeModules.filter(item => !['/dashboard', '/pacientes','/agenda','/odontologos','/especialidades','/consultorios','/historia-clinica','/estados-turno','/configuracion'].includes(item.path)).map(item => (
               <Route key={item.path} path={item.path} element={<PendingPage title={item.title} />} />
             ))}
             <Route path="*" element={<NotFoundPage />} />

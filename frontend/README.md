@@ -20,10 +20,20 @@ Centralizar la gestión diaria de la clínica desde una interfaz clara y accesib
 - Registro y consulta de consultorios, especialidades e historias clínicas.
 - Catálogo de estados de turno y formularios auxiliares de empleados y direcciones.
 - Navegación con menú lateral adaptable, rutas protegidas y página para direcciones inexistentes.
-- Tema claro y oscuro con preferencia guardada.
+- Configuración de apariencia (claro, oscuro o sistema), accesibilidad y preferencias de listados, guardadas en el navegador.
 - Estados de carga, error y ausencia de datos, notificaciones y confirmación antes de desactivar un paciente.
 
 El acceso todavía no valida la identidad contra el backend. Las credenciales locales de desarrollo están definidas en `src/services/authService.js`.
+
+## Configuración de la aplicación
+
+La sección Configuración permite elegir el tema, usar texto grande, aumentar el contraste y reducir animaciones. La opción Sistema sigue la apariencia del dispositivo y responde a sus cambios. El botón de tema de la barra superior sigue disponible; al usarlo, se elige explícitamente claro u oscuro.
+
+La cantidad de filas (10, 25 o 50) se aplica mediante paginación local a Dashboard, Pacientes, Agenda y los listados de catálogos. Los filtros se aplican al conjunto completo antes de paginar; cambiar un filtro o la cantidad de filas vuelve a la primera página.
+
+Recordar filtros y búsquedas está desactivado inicialmente. Al activarlo, conserva los valores de los controles de esas pantallas; al desactivarlo, elimina los filtros guardados. Las preferencias utilizan `localStorage`, no guardan respuestas de la API ni credenciales y no cambian datos de la clínica. Si el navegador bloquea el almacenamiento, siguen funcionando durante la sesión actual.
+
+Sesión muestra el usuario del contexto de autenticación y permite cerrar sesión con el flujo existente.
 
 ## Integración con API
 
@@ -52,7 +62,7 @@ Las versiones utilizadas se encuentran en `package.json` y `package-lock.json`.
 src/
 ├── components/   Componentes compartidos y formulario de pacientes
 ├── config/       Módulos habilitados
-├── context/      Sesión, tema y notificaciones
+├── context/      Sesión, tema, preferencias y notificaciones
 ├── hooks/        Consultas y preferencias
 ├── layouts/      Estructura administrativa
 ├── mocks/        Datos anteriores conservados, fuera del flujo activo
@@ -96,6 +106,7 @@ El script verifica el contrato y las validaciones con respuestas controladas; no
 | Dashboard | Implementado | Indicadores, agenda y actividad desde la API |
 | Gestión de pacientes | Implementado | Consulta, alta, modificación y baja lógica con catálogos reales |
 | Navegación y temas | Implementado | Menú adaptable, rutas protegidas y preferencias visuales |
+| Configuración | Implementado | Apariencia, accesibilidad, paginación, filtros recordados y cierre de sesión |
 | Gestión de turnos | Implementado | Reserva, detalle, modificación, cancelación e historial de estados |
 | Historia clínica | Implementado | Registro, consulta y modificación; conserva las relaciones originales |
 | Odontólogos y consultorios | Implementado | Gestión conectada a la API, horarios y referencias |
