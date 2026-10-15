@@ -6,6 +6,8 @@ export const modules = [
   { path: '/agenda', title: 'Agenda / Turnos', icon: FiCalendar, enabled: true },
   { path: '/pacientes', title: 'Pacientes', icon: FiUsers, enabled: true },
   { path: '/odontologos', title: 'Odontólogos', icon: FiUserCheck, enabled: true },
+  { path: '/especialidades', title: 'Especialidades', icon: FiActivity, enabled: true },
+  { path: '/estados-turno', title: 'Estados de turno', icon: FiCalendar, enabled: true },
   { path: '/historia-clinica', title: 'Historia clínica', icon: FiFileText, enabled: true },
   { path: '/insumos', title: 'Insumos', icon: FiPackage, enabled: false },
   { path: '/prestaciones', title: 'Prestaciones', icon: FiActivity, enabled: false },

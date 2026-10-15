@@ -8,6 +8,7 @@ api.interceptors.request.use(config => {
 export function apiErrorMessage(error) {
  if (error.response) {
   const { status, data } = error.response;
+    if (typeof data?.mensaje === 'string') return data.mensaje;
   const validation = data?.errors && typeof data.errors === 'object' ? Object.values(data.errors).flat().filter(v => typeof v === 'string').join(' ') : '';
   if (validation) return validation;
   if (typeof data === 'string' && data.length < 500 && !data.includes('<')) return data;
