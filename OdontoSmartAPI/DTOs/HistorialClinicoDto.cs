@@ -13,4 +13,10 @@ public class HistorialClinicoDto
     public string? TratamientosRealizados { get; set; }
 
     public string? Observaciones { get; set; }
+
+    public bool Anulado { get; set; }
+
+    public string? MotivoAnulacion { get; set; }
+
+    public DateTime? FechaAnulacion { get; set; }
 }

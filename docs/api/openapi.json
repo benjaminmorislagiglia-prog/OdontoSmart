@@ -1009,6 +1009,48 @@
         }
       }
     },
+    "/api/HistorialClinico/{id}/anular": {
+      "post": {
+        "tags": [
+          "HistorialClinico"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistorialClinicoAnularDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistorialClinicoAnularDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistorialClinicoAnularDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/historialestadoturno": {
       "get": {
         "tags": [
@@ -3341,6 +3383,20 @@
           "nombre": {
             "maxLength": 50,
             "minLength": 2,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "HistorialClinicoAnularDto": {
+        "required": [
+          "motivo"
+        ],
+        "type": "object",
+        "properties": {
+          "motivo": {
+            "maxLength": 300,
+            "minLength": 0,
             "type": "string"
           }
         },

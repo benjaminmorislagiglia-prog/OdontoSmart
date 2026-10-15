@@ -17,6 +17,12 @@ public partial class HistorialClinico
 
     public string? Observaciones { get; set; }
 
+    public bool Anulado { get; set; }
+
+    public string? MotivoAnulacion { get; set; }
+
+    public DateTime? FechaAnulacion { get; set; }
+
     public virtual Paciente IdPacienteNavigation { get; set; } = null!;
 
     public virtual Turno IdTurnoNavigation { get; set; } = null!;

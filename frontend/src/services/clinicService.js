@@ -24,6 +24,10 @@ export function resourceService(resource) {
 export const turnoService = resourceService('turnos');
 export const estadoService = resourceService('estados');
 export const historialEstadoService = resourceService('historialEstados');
+export async function anularHistoriaClinica(id, motivo) {
+ if (!/^[1-9]\d*$/.test(String(id))) throw new Error('Identificador inválido.');
+ return (await api.post(paths.historias + '/' + id + '/anular', {motivo})).data;
+}
 export async function getHistorialTurno(id) { return (await api.get('/api/historialestadoturno/turno/' + Number(id))).data; }
 export async function getEspecialidadesOdontologo(id) { return (await api.get('/api/odontologoespecialidades/odontologo/' + Number(id))).data; }
 export async function loadPacienteCatalogs(options) {
