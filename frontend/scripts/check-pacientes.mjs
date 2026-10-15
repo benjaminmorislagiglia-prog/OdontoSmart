@@ -4,7 +4,7 @@ import { createServer } from 'vite';
 import { AxiosError } from 'axios';
 import { emptyPaciente, validatePaciente, pacientePayload } from '../src/utils/pacienteForm.js';
 
-const swagger = JSON.parse(await readFile(new URL('../../docs/api/EndPointconswagger.json', import.meta.url), 'utf8'));
+const swagger = JSON.parse(await readFile(new URL('../../docs/api/openapi.json', import.meta.url), 'utf8'));
 const server = await createServer({ configFile: false, server: { middlewareMode: true }, define: {
   'import.meta.env.VITE_API_URL': JSON.stringify('https://contract.invalid'),
 } });

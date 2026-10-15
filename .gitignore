@@ -1,0 +1,26 @@
+# Dependencias, compilación y archivos locales
+**/node_modules/
+**/bin/
+**/obj/
+**/.vs/
+**/dist/
+**/.expo/
+**/TestResults/
+**/coverage/
+**/.env
+**/.env.*
+!**/.env.example
+**/appsettings.Local.json
+**/*.csproj.user
+**/*.suo
+*.log
+*.tmp
+*.bak
+*.pfx
+*.p12
+*.pem
+*.key
+*.mdf
+*.ldf
+.DS_Store
+Thumbs.db

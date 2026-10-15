@@ -4,7 +4,7 @@
 
 Aplicación web administrativa de OdontoSmart, un sistema de gestión para una clínica odontológica. Está orientada a administración, secretaría y odontólogos; no funciona como portal para pacientes.
 
-La solución general comprende una aplicación web, una aplicación móvil, una API REST y una base de datos SQL Server. El backend previsto utiliza ASP.NET Core Web API y Entity Framework Core.
+La solución general comprende una aplicación web, una aplicación móvil, una API REST y una base de datos SQL Server. El backend utiliza ASP.NET Core Web API y Entity Framework Core.
 
 ## Objetivo
 
@@ -13,8 +13,12 @@ Centralizar la gestión diaria de la clínica desde una interfaz clara y accesib
 ## Funcionalidades actuales
 
 - Inicio y cierre de sesión con validación local y conservación de la sesión durante el uso de la pestaña.
-- Dashboard con indicadores, agenda del día, búsqueda por paciente, filtros de estado y actividad reciente. Actualmente utiliza datos locales.
+- Dashboard con indicadores, agenda del día, búsqueda por paciente, filtros de estado y actividad reciente. La información se consulta desde la API.
 - Gestión de pacientes: listado, búsqueda, consulta de detalle, registro, modificación y desactivación mediante baja lógica.
+- Agenda con reserva, detalle, modificación, cancelación y consulta del historial de estados.
+- Gestión de odontólogos, días/horarios de atención y asignación de especialidades.
+- Registro y consulta de consultorios, especialidades e historias clínicas.
+- Catálogo de estados de turno y formularios auxiliares de empleados y direcciones.
 - Navegación con menú lateral adaptable, rutas protegidas y página para direcciones inexistentes.
 - Tema claro y oscuro con preferencia guardada.
 - Estados de carga, error y ausencia de datos, notificaciones y confirmación antes de desactivar un paciente.
@@ -23,13 +27,13 @@ El acceso todavía no valida la identidad contra el backend. Las credenciales lo
 
 ## Integración con API
 
-El módulo Pacientes utiliza Axios y servicios HTTP separados de las páginas para consumir la API ASP.NET Core. Implementa GET y POST sobre `/api/Pacientes`, y GET, PUT y DELETE sobre `/api/Pacientes/{id}`.
+Pacientes, Agenda, Odontólogos, Especialidades, Consultorios, Historia clínica, Estados de turno y Dashboard utilizan Axios y servicios HTTP separados de las páginas para consumir la API ASP.NET Core. Implementa GET y POST sobre `/api/Pacientes`, y GET, PUT y DELETE sobre `/api/Pacientes/{id}`.
 
 La URL base se configura mediante `VITE_API_URL`. Copiar `.env.example` a `.env.local`, completar la URL real de la API con su puerto, sin agregar la ruta del recurso, y reiniciar Vite. No colocar contraseñas ni tokens en variables públicas del frontend.
 
-El alta requiere un ID de dirección existente. Hasta disponer de los catálogos correspondientes, el formulario permite ingresar IDs en una sección identificada como temporal; la obra social es opcional. La API conserva la validación definitiva.
+El formulario de pacientes carga las direcciones y obras sociales de la API mediante selectores. Permite acceder a la gestión de direcciones; la obra social es opcional. El odontólogo se vincula con un empleado existente y la historia clínica con el paciente y su turno. La API conserva la validación definitiva.
 
-El contrato de referencia está en `../docs/api/EndPointconswagger.json`. Las condiciones y limitaciones de integración se describen en [las notas de Pacientes](../docs/api/pacientes.md).
+El contrato actual está en `../docs/api/openapi.json`, generado desde Swagger. La preparación local y las verificaciones se describen en [el informe de integración](../docs/revision-api.md).
 
 ## Tecnologías
 
@@ -51,7 +55,7 @@ src/
 ├── context/      Sesión, tema y notificaciones
 ├── hooks/        Consultas y preferencias
 ├── layouts/      Estructura administrativa
-├── mocks/        Datos locales del Dashboard
+├── mocks/        Datos anteriores conservados, fuera del flujo activo
 ├── pages/        Pantallas y rutas
 ├── services/     Acceso a datos y cliente HTTP
 ├── styles/       Estilos y adaptación de pantalla
@@ -73,7 +77,7 @@ npm install
 npm run dev
 ```
 
-Abrir la dirección indicada por Vite. La API debe estar ejecutándose y permitir el origen del frontend mediante CORS para utilizar Pacientes.
+Abrir la dirección indicada por Vite. La API debe estar ejecutándose y permitir el origen del frontend mediante CORS para utilizar los módulos conectados. El perfil HTTP del backend escucha en `http://localhost:5122`; configurar ese origen en `VITE_API_URL` para las pruebas locales.
 
 Para compilar y comprobar los servicios:
 
@@ -89,21 +93,21 @@ El script verifica el contrato y las validaciones con respuestas controladas; no
 | Funcionalidad | Estado | Alcance |
 | --- | --- | --- |
 | Inicio y cierre de sesión | Parcial | Flujo local; falta autenticación con backend |
-| Dashboard | Parcial | Interfaz y filtros implementados con datos locales |
-| Gestión de pacientes | Parcial | Servicios HTTP y formularios implementados; falta completar validación con API y catálogos |
+| Dashboard | Implementado | Indicadores, agenda y actividad desde la API |
+| Gestión de pacientes | Implementado | Consulta, alta, modificación y baja lógica con catálogos reales |
 | Navegación y temas | Implementado | Menú adaptable, rutas protegidas y preferencias visuales |
-| Gestión de turnos | Pendiente | El Dashboard muestra una agenda local; el módulo operativo aún no está desarrollado |
-| Historia clínica | Pendiente | Ruta definida, sin flujo de registro o consulta |
-| Odontólogos y consultorios | Pendiente | Secciones de navegación definidas, sin gestión funcional |
+| Gestión de turnos | Implementado | Reserva, detalle, modificación, cancelación e historial de estados |
+| Historia clínica | Implementado | Registro, consulta y modificación; conserva las relaciones originales |
+| Odontólogos y consultorios | Implementado | Gestión conectada a la API, horarios y referencias |
+| Especialidades y estados | Implementado | Catálogos y asignación de especialidades |
 
-Insumos, Prestaciones y Obras sociales están fuera del alcance del Sprint 1 y permanecen ocultos. Su trabajo se conserva; la habilitación se controla desde `src/config/modules.js`. Especialidades y horarios forman parte del alcance previsto, pero todavía no tienen módulos propios implementados.
+Insumos, Prestaciones y Obras sociales están fuera del alcance del Sprint 1 y permanecen ocultos. Su trabajo se conserva; la habilitación se controla desde `src/config/modules.js`. Especialidades dispone de un catálogo propio y los días/horarios se registran en el odontólogo según el modelo actual.
 
 ## Próximos pasos
 
-- Validar las operaciones de Pacientes con la API disponible.
-- Completar la selección de direcciones y obras sociales cuando existan sus contratos.
 - Incorporar autenticación real.
-- Desarrollar los flujos pendientes del Sprint 1 y validar su uso en distintos tamaños de pantalla.
+- Ampliar la validación de recorridos y accesibilidad en distintos tamaños de pantalla.
+- Integrar los módulos futuros cuando se habilite su alcance.
 
 ## Integrantes
 

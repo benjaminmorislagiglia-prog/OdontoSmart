@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const rows = data.appointments.filter(item => item.patient.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es')) && (status === 'Todos' || item.status === status));
   const metrics = [
     { label: 'Turnos de hoy', value: data.appointments.length, detail: `${data.appointments.filter(item => item.status === 'Atendido').length} atendidos hasta ahora`, icon: FiCalendar, tone: 'green' },
-    { label: 'Pacientes registrados', value: data.metrics.patients.toLocaleString('es-AR'), detail: 'Total en la clínica', icon: FiUsers, tone: 'blue' },
+    { label: 'Pacientes activos', value: data.metrics.patients.toLocaleString('es-AR'), detail: 'Pacientes habilitados en la clínica', icon: FiUsers, tone: 'blue' },
     { label: 'Odontólogos activos', value: data.metrics.dentists, detail: 'Equipo profesional', icon: FiUserCheck, tone: 'purple' },
     { label: 'Turnos pendientes', value: data.metrics.pending, detail: `${data.metrics.cancelled} cancelados · resumen general`, icon: FiClock, tone: 'orange' },
   ];

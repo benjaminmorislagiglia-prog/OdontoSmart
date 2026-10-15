@@ -8,12 +8,16 @@ import { getPacienteById, createPaciente, updatePaciente } from '../services/pac
 import { apiErrorMessage } from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import usePacienteQuery from '../hooks/usePacienteQuery';
+import { loadPacienteCatalogs } from '../services/clinicService';
 export default function PacienteFormPage() {
  const { id } = useParams();
  const editing = !!id;
  const navigate = useNavigate();
  const { notify } = useNotification();
- const loader = useCallback(options => id ? getPacienteById(id, options) : Promise.resolve(null), [id]);
+ const loader = useCallback(async options => {
+  const [patient, catalogs] = await Promise.all([id ? getPacienteById(id, options) : Promise.resolve(null), loadPacienteCatalogs(options)]);
+  return {patient, catalogs};
+ }, [id]);
  const { data, loading, error, reload } = usePacienteQuery(loader);
  async function save(values) {
   try {
@@ -23,5 +27,5 @@ export default function PacienteFormPage() {
    navigate(editing ? '/pacientes/' + id : '/pacientes');
   } catch (e) { const message = apiErrorMessage(e); notify(message, 'error'); throw new Error(message); }
  }
- return <><PageHeader eyebrow="PACIENTES" title={editing ? 'Editar paciente' : 'Registrar paciente'} description="Completá los datos personales del paciente."><Link to="/pacientes" className="btn btn-outline-secondary">Ver pacientes</Link></PageHeader>{loading ? <LoadingState message="Cargando formulario…" /> : error ? <ErrorState message={error} onAction={reload} /> : <PacienteForm key={id || 'new'} patient={data} onSave={save} cancelTo={editing ? '/pacientes/' + id : '/pacientes'} />}</>;
+ return <><PageHeader eyebrow="PACIENTES" title={editing ? 'Editar paciente' : 'Registrar paciente'} description="Completá los datos personales del paciente."><Link to="/pacientes" className="btn btn-outline-secondary">Ver pacientes</Link></PageHeader>{loading ? <LoadingState message="Cargando formulario…" /> : error ? <ErrorState message={error} onAction={reload} /> : <PacienteForm key={id || 'new'} patient={data.patient} catalogs={data.catalogs} onSave={save} cancelTo={editing ? '/pacientes/' + id : '/pacientes'} />}</>;
 }

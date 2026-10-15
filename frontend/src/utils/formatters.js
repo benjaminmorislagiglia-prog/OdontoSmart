@@ -27,7 +27,8 @@ export function formatDate(value) {
 }
 
 export function formatTime(value) {
-  if (typeof value === 'string' && /^\d{1,2}:\d{2}$/.test(value)) {
+  if (typeof value === 'string' && /^\d{1,2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(value)) {
+    if (value.split(':')[2] && Number(value.split(':')[2]) >= 60) return '—';
     const [hour, minute] = value.split(':').map(Number);
     return hour < 24 && minute < 60 ? `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}` : '—';
   }

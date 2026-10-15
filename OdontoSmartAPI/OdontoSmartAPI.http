@@ -1,0 +1,14 @@
+@OdontoSmartAPI_HostAddress = http://localhost:5122
+
+GET {{OdontoSmartAPI_HostAddress}}/api/Pacientes
+Accept: application/json
+
+###
+
+GET {{OdontoSmartAPI_HostAddress}}/api/Turnos
+Accept: application/json
+
+###
+
+GET {{OdontoSmartAPI_HostAddress}}/swagger/v1/swagger.json
+Accept: application/json
