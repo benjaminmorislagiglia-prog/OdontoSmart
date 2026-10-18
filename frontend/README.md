@@ -15,7 +15,7 @@ Centralizar la gestión diaria de la clínica desde una interfaz clara y accesib
 - Inicio y cierre de sesión con validación local y conservación de la sesión durante el uso de la pestaña.
 - Dashboard con indicadores, agenda del día, búsqueda por paciente, filtros de estado y actividad reciente. La información se consulta desde la API.
 - Gestión de pacientes: listado, búsqueda, consulta de detalle, registro, modificación y desactivación mediante baja lógica.
-- Agenda con reserva, detalle, modificación, cancelación y consulta del historial de estados.
+- Agenda con reserva, detalle, modificación, cancelación y consulta del historial de estados. Incluye Ausente con un badge propio y conserva el turno y sus cambios anteriores.
 - Gestión de odontólogos, días/horarios de atención y asignación de especialidades.
 - Registro y consulta de consultorios, especialidades e historias clínicas; anulación de historias con motivo y fecha, conservando su contenido.
 - Catálogo de estados de turno y formularios auxiliares de empleados y direcciones.
@@ -50,6 +50,8 @@ La URL base se configura mediante `VITE_API_URL`. Copiar `.env.example` a `.env.
 El formulario de pacientes carga las direcciones y obras sociales de la API mediante selectores. Permite acceder a la gestión de direcciones; la obra social es opcional. El odontólogo se vincula con un empleado existente y la historia clínica con el paciente y su turno. La API conserva la validación definitiva.
 
 El contrato actual está en `../docs/api/openapi.json`, generado desde Swagger. La preparación local y las verificaciones se describen en [el informe de integración](../docs/revision-api.md).
+
+Los selectores de estados de Agenda y Dashboard se obtienen del catálogo real de la API. Ausente utiliza el cambio genérico de estado por ID y persiste al refrescar. Se mantiene separado de Cancelado: únicamente la cancelación libera la reserva según la lógica actual de la agenda.
 
 ## Tecnologías
 

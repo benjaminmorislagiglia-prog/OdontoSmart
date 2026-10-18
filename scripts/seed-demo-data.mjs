@@ -85,13 +85,13 @@ if (!args.includes('--replace')) {
 function sql(query) {
   return execFileSync('sqlcmd',['-S',server,'-E','-d',database,'-b','-r','1','-h','-1','-W','-Q',query],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 }
-// Antes de tocar datos: validar destino, esquema, dependencias y catálogo fijo.
+// Antes de tocar datos: validar destino, esquema, dependencias y estados requeridos.
 sql(`SET NOCOUNT ON;
 IF DB_NAME() <> N'OdontoSmartDB' THROW 51000, 'Base de desarrollo inesperada.', 1;
 IF COL_LENGTH('dbo.HistorialClinico','Anulado') IS NULL THROW 51000, 'Falta la actualización de Historia Clínica.', 1;
 IF EXISTS(SELECT 1 FROM dbo.TurnoInsumo) OR EXISTS(SELECT 1 FROM dbo.PrestacionTurno) OR EXISTS(SELECT 1 FROM dbo.Equipamiento)
     THROW 51000, 'Hay relaciones fuera del alcance: revisar antes de reemplazar.', 1;
-IF (SELECT COUNT(*) FROM dbo.EstadoTurno) <> 4 OR (SELECT COUNT(*) FROM dbo.EstadoTurno WHERE Nombre IN ('Pendiente','Confirmado','Atendido','Cancelado')) <> 4
+IF (SELECT COUNT(*) FROM dbo.EstadoTurno WHERE Nombre IN ('Pendiente','Confirmado','Atendido','Cancelado')) <> 4
     THROW 51000, 'El catálogo de estados no coincide; no se modificará.', 1;`);
 const backupDir = sql("SET NOCOUNT ON; SELECT CAST(SERVERPROPERTY('InstanceDefaultBackupPath') AS nvarchar(4000));");
 if (!path.win32.isAbsolute(backupDir)) throw Error('No se pudo determinar una carpeta de respaldo válida.');

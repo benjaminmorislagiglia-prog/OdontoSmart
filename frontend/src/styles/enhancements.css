@@ -83,7 +83,7 @@ a { color: var(--accent); }
 .pending, .orange, .alert-type, .count-pill.amber { background: var(--warning-bg); color: var(--warning-text); }
 .cancelled, .alert-type.expiry { background: var(--danger-bg); color: var(--danger-text); }
 .attended, .blue { background: var(--info-bg); color: var(--info-text); }
-.purple { background: var(--purple-bg); color: var(--purple-text); }
+.purple, .absent { background: var(--purple-bg); color: var(--purple-text); }
 .alert-heading-icon { color: var(--warning-text); }
 .alert-danger { background: var(--danger-bg); color: var(--danger-text); border-color: var(--border); }
 .invalid-feedback { color: var(--danger-text); }

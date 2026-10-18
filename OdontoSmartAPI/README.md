@@ -37,6 +37,21 @@ Ver [informe de revisión e integración](../docs/revision-api.md) para los camb
 
 La autenticación real sigue pendiente: el login actual de la web controla navegación localmente.
 
+## Estados de turno y Ausente
+
+El catálogo incluye Pendiente, Confirmado, Atendido, Cancelado y Ausente. `Actualizacion Estados-Turno.sql` incorpora los faltantes mediante `IF NOT EXISTS`, conservando IDs y nombres existentes. El script general `OdontoSmart.sql` también incluye el catálogo completo para nuevas instalaciones. No se modifican tablas, columnas ni mapeos de Entity Framework.
+
+`GET /api/estadosturno` devuelve el catálogo. Para marcar Ausente se reutiliza `POST /api/historialestadoturno` con `idTurno` e `idEstadoTurno` obtenidos de la API. El controlador conserva el turno, agrega un registro al historial con `DateTime.Now` y el último estado aparece en `GET /api/Turnos`. Ausente no cancela ni libera la reserva; Cancelado mantiene su comportamiento existente.
+
+Prueba específica desde la raíz, sólo contra una base local de desarrollo:
+
+```powershell
+$env:ODONTOSMART_API_URL = 'http://localhost:5122'
+node scripts/check-ausente.mjs --allow-write
+```
+
+La prueba consulta los estados sin crearlos, verifica 24 solicitudes HTTP, crea tres turnos con catálogos existentes y conserva su historial: uno queda Ausente y los otros dos Cancelado. No reemplaza los datos de demostración ni ejecuta el generador de datos.
+
 ## Anulación de historia clínica
 
 `POST /api/HistorialClinico/{id}/anular` recibe `{ "motivo": "Registro cargado por error" }`. Exige un motivo no vacío de hasta 300 caracteres y devuelve el DTO con `anulado`, `motivoAnulacion` y `fechaAnulacion` (UTC). Los GET generales, por ID y por paciente incluyen las historias anuladas.
