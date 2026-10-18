@@ -9,4 +9,6 @@ IF NOT EXISTS (SELECT 1 FROM dbo.EstadoTurno WHERE Nombre = 'Atendido')
     INSERT dbo.EstadoTurno(Nombre) VALUES ('Atendido');
 IF NOT EXISTS (SELECT 1 FROM dbo.EstadoTurno WHERE Nombre = 'Cancelado')
     INSERT dbo.EstadoTurno(Nombre) VALUES ('Cancelado');
+IF NOT EXISTS (SELECT 1 FROM dbo.EstadoTurno WHERE Nombre = 'Ausente')
+    INSERT dbo.EstadoTurno(Nombre) VALUES ('Ausente');
 GO

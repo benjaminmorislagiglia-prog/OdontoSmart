@@ -7,6 +7,7 @@ export const dashboardService = {
     const now=new Date();
     const today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
     return {
+      states: estados.map(e=>e.nombre),
       appointments:turnos.filter(t=>t.fecha===today).map(t=>({id:t.idTurno,time:t.hora,patient:t.paciente,dentist:t.odontologo,room:t.consultorio,status:t.estado||'Sin estado registrado'})),
       metrics:{patients:pacientes.length,dentists:odontologos.length,pending:turnos.filter(t=>t.estado==='Pendiente').length,cancelled:turnos.filter(t=>t.estado==='Cancelado').length},
       supplies:[],
