@@ -223,7 +223,7 @@ public class PacientesController : ControllerBase
         {
             return NotFound(new
             {
-                mensaje = "El paciente no existe o ya está desactivado."
+                mensaje = "El paciente no existe o ya está inactivo."
             });
         }
 

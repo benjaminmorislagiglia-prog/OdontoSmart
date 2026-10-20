@@ -3424,6 +3424,7 @@
           "cp": {
             "maxLength": 10,
             "minLength": 4,
+            "pattern": "(?=.*[0-9])[A-Za-z0-9]{4,10}",
             "type": "string"
           },
           "idLocalidad": {
@@ -3489,25 +3490,31 @@
           "dni": {
             "maxLength": 20,
             "minLength": 0,
+            "pattern": "[0-9]{1,20}",
             "type": "string"
           },
           "nombre": {
             "maxLength": 100,
             "minLength": 0,
+            "pattern": "(?=.*\\p{L})[\\p{L}\\p{M} .'’-]+",
             "type": "string"
           },
           "apellido": {
             "maxLength": 100,
             "minLength": 0,
+            "pattern": "(?=.*\\p{L})[\\p{L}\\p{M} .'’-]+",
             "type": "string"
           },
           "telefono": {
             "maxLength": 20,
             "minLength": 0,
+            "pattern": "(?=.*[0-9])[+]?[0-9() .-]+",
             "type": "string",
             "nullable": true
           },
           "idDireccion": {
+            "maximum": 2147483647,
+            "minimum": 1,
             "type": "integer",
             "format": "int32",
             "nullable": true
@@ -3820,16 +3827,19 @@
           "horarioAtencion": {
             "maxLength": 50,
             "minLength": 0,
+            "pattern": "(?:[01][0-9]|2[0-3]):[0-5][0-9]\\s*(?:-|a)\\s*(?:[01][0-9]|2[0-3]):[0-5][0-9]",
             "type": "string"
           },
           "diaAtencion": {
             "maxLength": 50,
             "minLength": 0,
+            "pattern": "(?=.*\\p{L})[\\p{L}\\p{M} ,/.\\-]+",
             "type": "string"
           },
           "nroMatricula": {
             "maxLength": 50,
             "minLength": 0,
+            "pattern": "[A-Za-z0-9]+(?:[ ./\\-][A-Za-z0-9]+)*",
             "type": "string"
           },
           "idEmpleado": {
@@ -3900,21 +3910,25 @@
           "dni": {
             "maxLength": 20,
             "minLength": 0,
+            "pattern": "[0-9]{1,20}",
             "type": "string"
           },
           "nombre": {
             "maxLength": 100,
             "minLength": 0,
+            "pattern": "(?=.*\\p{L})[\\p{L}\\p{M} .'’-]+",
             "type": "string"
           },
           "apellido": {
             "maxLength": 100,
             "minLength": 0,
+            "pattern": "(?=.*\\p{L})[\\p{L}\\p{M} .'’-]+",
             "type": "string"
           },
           "telefono": {
             "maxLength": 20,
             "minLength": 0,
+            "pattern": "(?=.*[0-9])[+]?[0-9() .-]+",
             "type": "string",
             "nullable": true
           },
@@ -3930,6 +3944,8 @@
             "format": "date"
           },
           "idObraSocial": {
+            "maximum": 2147483647,
+            "minimum": 1,
             "type": "integer",
             "format": "int32",
             "nullable": true

@@ -16,9 +16,9 @@ const province = await request('provincias', 'POST', {nombre: name('provincia'),
 const city = await request('localidades', 'POST', {nombre: name('localidad'), idProvincia: province.idProvincia}, 201);
 const address = await request('direcciones', 'POST', {calle: name('calle'), numero: 1, cp:'5000', idLocalidad:city.idLocalidad}, 201);
 const job = await request('puestos','POST',{nombre:name('puesto')},201);
-async function employee(suffix) { return request('empleados','POST',{dni: String(Date.now())+suffix, nombre:'Verificación', apellido:suffix, idPuesto:job.idPuesto},201); }
+async function employee(suffix) { return request('empleados','POST',{dni: String(Date.now())+suffix, nombre:'Verificación', apellido:suffix==='1'?'Primero':'Segundo', idPuesto:job.idPuesto},201); }
 const emp1 = await employee('1'); const emp2 = await employee('2');
-const dentistData = emp => ({horarioAtencion:'09:00-17:00', diaAtencion:'Lunes a Viernes', nroMatricula:name(emp.idEmpleado), idEmpleado:emp.idEmpleado});
+const dentistData = emp => ({horarioAtencion:'09:00-17:00', diaAtencion:'Lunes a Viernes', nroMatricula:'QA-'+emp.idEmpleado, idEmpleado:emp.idEmpleado});
 const dentist1 = await request('odontologos','POST',dentistData(emp1),201);
 const dentist2 = await request('odontologos','POST',dentistData(emp2),201);
 await request('odontologos/'+dentist1.idOdontologo,'PUT',dentistData(emp1),204);

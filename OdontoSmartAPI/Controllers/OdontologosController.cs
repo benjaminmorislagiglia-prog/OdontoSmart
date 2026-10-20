@@ -83,7 +83,7 @@ public class OdontologosController : ControllerBase
         if (!empleadoDisponible)
         {
             return BadRequest(
-                "El empleado no existe o está desactivado.");
+                "El empleado no existe o está inactivo.");
         }
 
 
@@ -202,7 +202,7 @@ public class OdontologosController : ControllerBase
         {
             return NotFound(new
             {
-                mensaje = "El odontólogo no existe o ya está desactivado."
+                mensaje = "El odontólogo no existe o ya está inactivo."
             });
         }
 

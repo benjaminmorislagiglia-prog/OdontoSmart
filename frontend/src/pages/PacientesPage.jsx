@@ -29,7 +29,7 @@ export default function PacientesPage() {
   lock.current=true;setBusy(true);setMessage('');
   try {
    await (selected.reactivate ? reactivatePaciente : deletePaciente)(selected.patient.idPaciente);
-   notify(selected.reactivate?'Paciente reactivado correctamente.':'Paciente desactivado correctamente.','success');
+   notify(selected.reactivate?'Paciente reactivado correctamente.':'Paciente marcado como inactivo.','success');
    setSelected(null);reload();
   }catch(e){const text=apiErrorMessage(e);setMessage(text);notify(text,'error');}
   finally{lock.current=false;setBusy(false);}
@@ -39,7 +39,7 @@ export default function PacientesPage() {
  const columns = [
   {key:'nombre',label:'Nombre y apellido',render:p=><Link className="patient-name" to={'/pacientes/'+p.idPaciente}>{p.nombre} {p.apellido}</Link>},
   ...[['dni','DNI'],['telefono','Teléfono'],['correo','Correo']].map(([key,label])=>({key,label,render:p=>p[key]||'—'})),
-  {key:'activo',label:'Estado',render:p=><StatusBadge status={p.activo===true?'Activo':'Desactivado'}/>},
+  {key:'activo',label:'Estado',render:p=><StatusBadge status={p.activo===true?'Activo':'Inactivo'}/>},
  ];
  const actions = (p,inactive) => <>
   <Link to={'/pacientes/'+p.idPaciente} className="btn btn-sm btn-outline-secondary">Ver detalle</Link>
@@ -50,7 +50,7 @@ export default function PacientesPage() {
   <section className="panel mb-3"><div className="table-toolbar pt-3"><label htmlFor="pacientes-search" className="visually-hidden">Buscar pacientes</label><input id="pacientes-search" className="form-control" placeholder="Buscar por nombre, DNI, teléfono o correo…" value={query} onChange={e=>setQuery(e.target.value)}/></div></section>
   {loading?<LoadingState message="Cargando pacientes…"/>:error?<ErrorState message={error} onAction={reload}/>:<>
    <RecordListSection title="Pacientes activos" rows={filter(data.active)} idKey="idPaciente" columns={columns} actions={p=>actions(p,false)} filterKey={query} emptyMessage={query?'No hay coincidencias entre los pacientes activos.':'No hay pacientes activos.'}/>
-   <RecordListSection title="Pacientes desactivados" rows={filter(data.inactive)} idKey="idPaciente" columns={columns} actions={p=>actions(p,true)} filterKey={query} emptyMessage={query?'No hay coincidencias entre los pacientes desactivados.':'No hay pacientes desactivados.'}/>
+   <RecordListSection title="Pacientes inactivos" rows={filter(data.inactive)} idKey="idPaciente" columns={columns} actions={p=>actions(p,true)} filterKey={query} emptyMessage={query?'No hay coincidencias entre los pacientes inactivos.':'No hay pacientes inactivos.'}/>
   </>}
   <ConfirmModal show={!!selected} title={selected?.reactivate?'Reactivar paciente':'Desactivar paciente'} confirmText={selected?.reactivate?'Reactivar':'Desactivar'} variant={selected?.reactivate?'primary':'danger'} busy={busy} onConfirm={changeStatus} onCancel={()=>{if(!busy)setSelected(null);}} message={<><p>¿Deseás {selected?.reactivate?'reactivar':'desactivar'} a {selected?.patient.nombre} {selected?.patient.apellido}?</p><p>{selected?.reactivate?'Volverá a aparecer entre los pacientes activos.':'Se conservarán sus datos, turnos e historia clínica.'}</p>{message&&<p role="alert" className="alert alert-danger">{message}</p>}</>}/>
  </>;
