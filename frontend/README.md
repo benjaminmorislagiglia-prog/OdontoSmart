@@ -16,6 +16,7 @@ Centralizar la gestión diaria de la clínica desde una interfaz clara y accesib
 - Dashboard con indicadores, agenda del día, búsqueda por paciente, filtros de estado y actividad reciente. La información se consulta desde la API.
 - Gestión de pacientes con listados separados de activos y inactivos, búsqueda, detalle, registro, modificación, desactivación y reactivación.
 - Agenda con reserva, detalle, modificación, cancelación y consulta del historial de estados. Incluye Ausente con un badge propio y conserva el turno y sus cambios anteriores.
+- Calendario en español al reservar o modificar un turno: selección visual del día, mes y año, navegación entre meses y botón Hoy. Cancelar conserva la fecha anterior. La API recibe la misma fecha ISO (AAAA-MM-DD), sin conversión de zona horaria.
 - Módulo independiente de Empleados: registro, detalle completo, modificación, desactivación y reactivación, con los campos existentes de la API.
 - Gestión de odontólogos a partir de un empleado existente, matrícula y días/horarios de atención. Especialidades y su asignación se gestionan desde Odontólogos.
 - Registro y consulta de especialidades e historias clínicas; anulación de historias con motivo y fecha, conservando su contenido.
