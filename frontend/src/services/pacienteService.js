@@ -15,6 +15,8 @@ export async function getPacienteById(id, { signal } = {}) {
  return data;
 }
 export async function createPaciente(data) { return (await api.post(path, data)).data; }
-export async function updatePaciente(id, data) { return (await api.put(patientPath(id), data)).data; }
+export async function updatePaciente(id, data, { reactivar = false } = {}) {
+ return (await api.put(patientPath(id), data, { params: reactivar ? { reactivar:true } : undefined })).data;
+}
 export async function deletePaciente(id) { return (await api.delete(patientPath(id))).data; }
 export async function reactivatePaciente(id) { return (await api.post(patientPath(id) + '/reactivar')).data; }

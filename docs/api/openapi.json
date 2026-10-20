@@ -2455,6 +2455,14 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "reactivar",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "requestBody": {

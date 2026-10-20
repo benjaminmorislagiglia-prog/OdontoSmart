@@ -66,6 +66,28 @@ try {
     assert.ok((await request(route+'?activo=false')).some(r=>r[key]===id));
     await request(route+'/'+id,'GET',undefined,404);
     assert.equal((await request(route+'/'+id+'?incluirInactivos=true')).activo,false);
+    if(route==='Pacientes') {
+      const before=await request(route+'/'+id+'?incluirInactivos=true');
+      const updated={...patientBody,nombre:'Verificación actualizada',telefono:'1100000004'};
+      await request(route+'/'+id+'?reactivar=true','PUT',{...updated,nombre:''},400);
+      if(originals.Pacientes.length)
+        await request(route+'/'+id+'?reactivar=true','PUT',{...updated,dni:originals.Pacientes[0].dni},409);
+      assert.deepEqual(await request(route+'/'+id+'?incluirInactivos=true'),before);
+      await request(route+'/'+id,'PUT',updated,204);
+      const edited=await request(route+'/'+id+'?incluirInactivos=true');
+      assert.equal(edited.nombre,updated.nombre);
+      assert.equal(edited.telefono,updated.telefono);
+      assert.equal(edited.activo,false);
+      await request(route+'/'+id,'GET',undefined,404);
+      await request(route+'/'+id+'?reactivar=true','PUT',{...updated,telefono:'1100000005'},204);
+      const reactivated=await request(route+'/'+id);
+      assert.equal(reactivated.idPaciente,id);
+      assert.equal(reactivated.activo,true);
+      assert.equal(reactivated.telefono,'1100000005');
+      assert.equal((await request('Pacientes')).filter(p=>p.idPaciente===id).length,1);
+      assert.ok(!(await request('Pacientes?activo=false')).some(p=>p.idPaciente===id));
+      await request(route+'/'+id,'DELETE',undefined,204);
+    }
     await request('Turnos','POST',{...turnBody,hora:'18:30:00'},400);
     if(route==='Empleados') {
       assert.ok(!(await request('Odontologos')).some(r=>r.idOdontologo===doctor.idOdontologo));

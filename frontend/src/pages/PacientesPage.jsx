@@ -43,7 +43,7 @@ export default function PacientesPage() {
  ];
  const actions = (p,inactive) => <>
   <Link to={'/pacientes/'+p.idPaciente} className="btn btn-sm btn-outline-secondary">Ver detalle</Link>
-  {!inactive&&<Link to={'/pacientes/'+p.idPaciente+'/editar'} className="btn btn-sm btn-outline-secondary">Modificar</Link>}
+  <Link to={'/pacientes/'+p.idPaciente+'/editar'} className="btn btn-sm btn-outline-secondary">Modificar</Link>
   <button type="button" className={'btn btn-sm '+(inactive?'btn-outline-primary':'btn-outline-danger')} disabled={busy} onClick={()=>ask(p,inactive)} aria-label={(inactive?'Reactivar a ':'Desactivar a ')+p.nombre+' '+p.apellido}>{inactive?'Reactivar':'Desactivar'}</button>
  </>;
  return <><PageHeader eyebrow="GESTIÓN DE PACIENTES" title="Pacientes" description="Consultá y administrá la información de los pacientes."><Link className="btn btn-primary" to="/pacientes/nuevo">Registrar paciente</Link></PageHeader>
