@@ -1,6 +1,8 @@
 import { FiCheck, FiCheckCircle, FiClock, FiUserX, FiXCircle } from 'react-icons/fi';
 
 const states = {
+  Activo: { icon: FiCheckCircle, className: 'confirmed' },
+  Desactivado: { icon: FiUserX, className: 'cancelled' },
   Confirmado: { icon: FiCheckCircle, className: 'confirmed' },
   Pendiente: { icon: FiClock, className: 'pending' },
   Atendido: { icon: FiCheck, className: 'attended' },

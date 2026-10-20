@@ -14,12 +14,18 @@ export function resourceService(resource) {
   return path + '/' + id;
  };
  return {
-  async list({signal} = {}) { const {data} = await api.get(path,{signal}); if(!Array.isArray(data)) throw new Error('La API devolvió un listado inesperado.'); return data; },
-  async get(id, {signal} = {}) { return (await api.get(itemPath(id),{signal})).data; },
+  async list({signal,activo} = {}) { const {data} = await api.get(path,{signal,params:activo === undefined ? undefined : {activo}}); if(!Array.isArray(data)) throw new Error('La API devolvió un listado inesperado.'); return data; },
+  async get(id, {signal,incluirInactivos} = {}) { return (await api.get(itemPath(id),{signal,params:incluirInactivos ? {incluirInactivos:true} : undefined})).data; },
   async create(data) { return (await api.post(path,data)).data; },
   async update(id,data) { return (await api.put(itemPath(id),data)).data; },
-  async remove(id) { return (await api.delete(itemPath(id))).data; }
+  async remove(id) { return (await api.delete(itemPath(id))).data; },
+  async reactivate(id) { return (await api.post(itemPath(id) + '/reactivar')).data; }
  };
+}
+export async function listIncludingInactive(resource, options) {
+ const service = resourceService(resource);
+ const [active,inactive] = await Promise.all([service.list(options),service.list({...options,activo:false})]);
+ return [...active,...inactive];
 }
 export const turnoService = resourceService('turnos');
 export const estadoService = resourceService('estados');

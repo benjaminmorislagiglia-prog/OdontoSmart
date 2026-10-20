@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OdontoSmartAPI.Data;
@@ -34,11 +34,11 @@ public class OdontologosController : ControllerBase
     // GET: api/odontologos
     [HttpGet]
     public async Task<ActionResult<IEnumerable<OdontologoDto>>>
-        GetOdontologos()
+        GetOdontologos([FromQuery] bool activo = true)
     {
         var odontologos = await _context.Odontologos
             .AsNoTracking()
-            .Where(o => o.Activo == true)
+            .Where(o => activo ? (o.Activo && o.IdEmpleadoNavigation.Activo == true) : (!o.Activo || o.IdEmpleadoNavigation.Activo != true))
             .Select(o => new OdontologoDto
             {
                 IdOdontologo = o.IdOdontologo,
@@ -56,12 +56,12 @@ public class OdontologosController : ControllerBase
     // GET: api/odontologos/5
     [HttpGet("{id:int}")]
     public async Task<ActionResult<OdontologoDto>>
-        GetOdontologo(int id)
+        GetOdontologo(int id, [FromQuery] bool incluirInactivos = false)
     {
         var odontologo = await _context.Odontologos
             .AsNoTracking()
             .FirstOrDefaultAsync(o =>
-                o.IdOdontologo == id && o.Activo == true);
+                o.IdOdontologo == id && (incluirInactivos || (o.Activo && o.IdEmpleadoNavigation.Activo == true)));
 
         if (odontologo == null)
             return NotFound("Odontólogo no encontrado.");
@@ -83,7 +83,7 @@ public class OdontologosController : ControllerBase
         if (!empleadoDisponible)
         {
             return BadRequest(
-                "El empleado no existe o está dado de baja.");
+                "El empleado no existe o está desactivado.");
         }
 
 
@@ -171,6 +171,24 @@ public class OdontologosController : ControllerBase
         return NoContent();
     }
 
+    // Reactivación: recupera el mismo registro y todas sus relaciones.
+    [HttpPost("{id:int}/reactivar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ReactivarOdontologo(int id)
+    {
+        var registro = await _context.Odontologos.FirstOrDefaultAsync(r => r.IdOdontologo == id);
+        if (registro == null) return NotFound("No se encontró el registro.");
+
+        if (!await _context.Empleados.AnyAsync(e => e.IdEmpleado == registro.IdEmpleado && e.Activo == true))
+            return Conflict("Reactivá primero el empleado asociado al odontólogo.");
+
+        registro.Activo = true;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
     // DELETE: api/odontologos/5
     // Baja lógica: conserva el historial
     [HttpDelete("{id:int}")]
@@ -184,7 +202,7 @@ public class OdontologosController : ControllerBase
         {
             return NotFound(new
             {
-                mensaje = "El odontólogo no existe o ya está dado de baja."
+                mensaje = "El odontólogo no existe o ya está desactivado."
             });
         }
 

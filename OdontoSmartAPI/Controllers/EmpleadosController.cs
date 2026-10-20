@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OdontoSmartAPI.Data;
@@ -37,11 +37,11 @@ public class EmpleadosController : ControllerBase
     // GET: api/empleados
     [HttpGet]
     public async Task<ActionResult<IEnumerable<EmpleadoDto>>>
-        GetEmpleados()
+        GetEmpleados([FromQuery] bool activo = true)
     {
         var empleados = await _context.Set<Empleado>()
             .AsNoTracking()
-            .Where(e => e.Activo == true)
+            .Where(e => activo ? e.Activo == true : e.Activo != true)
             .Select(e => new EmpleadoDto
             {
                 IdEmpleado = e.IdEmpleado,
@@ -62,12 +62,12 @@ public class EmpleadosController : ControllerBase
     // GET: api/empleados/5
     [HttpGet("{id:int}")]
     public async Task<ActionResult<EmpleadoDto>>
-        GetEmpleado(int id)
+        GetEmpleado(int id, [FromQuery] bool incluirInactivos = false)
     {
         var empleado = await _context.Set<Empleado>()
             .AsNoTracking()
             .FirstOrDefaultAsync(e =>
-                e.IdEmpleado == id && e.Activo == true);
+                e.IdEmpleado == id && (incluirInactivos || e.Activo == true));
 
         if (empleado == null)
             return NotFound("Empleado no encontrado.");
@@ -179,6 +179,20 @@ public class EmpleadosController : ControllerBase
         return NoContent();
     }
 
+    // Reactivación: recupera el mismo registro y todas sus relaciones.
+    [HttpPost("{id:int}/reactivar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReactivarEmpleado(int id)
+    {
+        var registro = await _context.Empleados.FirstOrDefaultAsync(r => r.IdEmpleado == id);
+        if (registro == null) return NotFound("No se encontró el registro.");
+
+        registro.Activo = true;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
     // DELETE: api/empleados/5
     // Baja lógica: conserva el historial
     [HttpDelete("{id:int}")]
@@ -192,7 +206,7 @@ public class EmpleadosController : ControllerBase
         {
             return NotFound(new
             {
-                mensaje = "El empleado no existe o ya está dado de baja."
+                mensaje = "El empleado no existe o ya está desactivado."
             });
         }
 
