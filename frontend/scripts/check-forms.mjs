@@ -13,7 +13,7 @@ const forms={
  empleados:{dni:'0012345678',nombre:'María-José',apellido:'D’Ángelo',telefono:'+54 (351) 123-4567',correo:'prueba@example.com',idPuesto:'1',idDireccion:''},
  odontologos:{idEmpleado:'1',nroMatricula:'MP-123/4',diaAtencion:'Lunes a viernes',horarioAtencion:'09:00 a 17:00'},
  direcciones:{calle:'9 de Julio',numero:'123',barrio:'Centro',cp:'X5000ABC',idLocalidad:'1'},
- especialidades:{nombre:'Odontología general'},consultorios:{nombre:'Consultorio 1',idDireccion:'1'},
+ especialidades:{nombre:'Odontología general'},
  estados:{nombre:'Pendiente'},asociaciones:{idOdontologo:'1',idEspecialidad:'1'},
  historias:{idPaciente:'1',idTurno:'1',diagnostico:'Caries en pieza 16.',tratamientosRealizados:'Resina A2',observaciones:''},
 };
@@ -30,7 +30,7 @@ for(const value of ['ABCD','5000!','50','5000 ABC'])invalid('direcciones','cp',v
 for(const value of ['25:00-17:00','09:90-17:00','mañana','9'])invalid('odontologos','horarioAtencion',value);
 invalid('odontologos','diaAtencion','123');invalid('odontologos','nroMatricula','@@@');
 invalid('empleados','correo','abc');invalid('empleados','idPuesto','1.5');invalid('empleados','idPuesto','2');
-invalid('especialidades','nombre','  ');invalid('consultorios','nombre','A');
+invalid('especialidades','nombre','  ');
 valid('empleados',{...forms.empleados,nombre:'Jose\u0301',apellido:"O'Connor",telefono:'',correo:''});
 valid('direcciones',{...forms.direcciones,cp:'5000',numero:'2147483647'});
 valid('odontologos',{...forms.odontologos,horarioAtencion:'09:00-17:00'});

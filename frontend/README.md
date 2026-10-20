@@ -18,7 +18,7 @@ Centralizar la gestión diaria de la clínica desde una interfaz clara y accesib
 - Agenda con reserva, detalle, modificación, cancelación y consulta del historial de estados. Incluye Ausente con un badge propio y conserva el turno y sus cambios anteriores.
 - Módulo independiente de Empleados: registro, detalle completo, modificación, desactivación y reactivación, con los campos existentes de la API.
 - Gestión de odontólogos a partir de un empleado existente, matrícula y días/horarios de atención. Especialidades y su asignación se gestionan desde Odontólogos.
-- Registro y consulta de consultorios, especialidades e historias clínicas; anulación de historias con motivo y fecha, conservando su contenido.
+- Registro y consulta de especialidades e historias clínicas; anulación de historias con motivo y fecha, conservando su contenido.
 - Catálogo de estados de turno y formulario auxiliar de direcciones. El cambio de estados sigue en Agenda, con su control existente.
 - Navegación con menú lateral adaptable, rutas protegidas y página para direcciones inexistentes.
 - Configuración con apariencia claro/oscuro, accesibilidad y preferencias de listados guardadas en el navegador.
@@ -44,7 +44,7 @@ Detalle ofrece Anular registro con confirmación y motivo obligatorio de hasta 3
 
 ## Integración con API
 
-Pacientes, Empleados, Agenda, Odontólogos, Especialidades, Consultorios, Historia clínica, Estados de turno y Dashboard utilizan Axios y servicios HTTP separados de las páginas para consumir la API ASP.NET Core. Implementa GET y POST sobre `/api/Pacientes`, y GET, PUT y DELETE sobre `/api/Pacientes/{id}`.
+Pacientes, Empleados, Agenda, Odontólogos, Especialidades, Historia clínica, Estados de turno y Dashboard utilizan Axios y servicios HTTP separados de las páginas para consumir la API ASP.NET Core. Implementa GET y POST sobre `/api/Pacientes`, y GET, PUT y DELETE sobre `/api/Pacientes/{id}`.
 
 Pacientes, Empleados y Odontólogos consultan los inactivos mediante `?activo=false`, permiten consultar su detalle con `?incluirInactivos=true` y reactivan el mismo registro mediante `POST /api/{recurso}/{id}/reactivar`. DELETE conserva la baja lógica. Los tres módulos comparten presentación de tablas, badges, confirmaciones y notificaciones.
 
@@ -70,7 +70,7 @@ El menú principal incluye Empleados. Especialidades se encuentra en `/odontolog
 
 Un odontólogo sólo está disponible si están activos su propio registro y el empleado asociado. Reactivar al empleado no cambia el campo Activo del odontólogo. Si el empleado está inactivo, la web indica que debe reactivarse primero. El selector de empleados excluye los ya asociados, incluso si su odontólogo está inactivo; la API valida también esta relación única.
 
-Consultorios sigue representando salas físicas de una única clínica, con sus datos existentes y sus formularios. No se agregan sucursales ni datos para completar pantallas.
+Consultorio 1, 2 y 3 se conservan en la base de datos y se consultan desde la API al reservar o modificar turnos. La web no incluye una sección de gestión de consultorios ni formularios para registrarlos, modificarlos o eliminarlos. La ruta anterior `/consultorios` redirige a Agenda.
 
 La URL base se configura mediante `VITE_API_URL`. Copiar `.env.example` a `.env.local`, completar la URL real de la API con su puerto, sin agregar la ruta del recurso, y reiniciar Vite. No colocar contraseñas ni tokens en variables públicas del frontend.
 
@@ -144,7 +144,8 @@ El script verifica el contrato y las validaciones con respuestas controladas; no
 | Configuración | Implementado | Apariencia, accesibilidad, paginación, filtros recordados y cierre de sesión |
 | Gestión de turnos | Implementado | Reserva, detalle, modificación, cancelación e historial de estados |
 | Historia clínica | Implementado | Registro, consulta, modificación y anulación con motivo; conserva contenido y relaciones |
-| Odontólogos y consultorios | Implementado | Gestión conectada a la API, horarios y referencias |
+| Odontólogos | Implementado | Gestión conectada a la API, horarios y referencias |
+| Consultorios en Agenda | Implementado | Selector con los consultorios existentes de la API, sin módulo de gestión |
 | Especialidades y estados | Implementado | Catálogos y asignación de especialidades |
 
 Insumos, Prestaciones y Obras sociales están fuera del alcance del Sprint 1 y permanecen ocultos. Su trabajo se conserva; la habilitación se controla desde `src/config/modules.js`. Especialidades dispone de un catálogo propio y los días/horarios se registran en el odontólogo según el modelo actual.
