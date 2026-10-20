@@ -1,4 +1,4 @@
-import { FiGrid, FiCalendar, FiUsers, FiUserCheck, FiFileText, FiPackage, FiActivity, FiShield, FiHome, FiSettings } from 'react-icons/fi';
+import { FiGrid, FiCalendar, FiUsers, FiUserCheck, FiFileText, FiPackage, FiActivity, FiShield, FiSettings } from 'react-icons/fi';
 
 // Fuera del alcance del Sprint 1: los módulos con enabled: false se conservan para un sprint futuro.
 export const modules = [
@@ -13,7 +13,6 @@ export const modules = [
   { path: '/insumos', title: 'Insumos', icon: FiPackage, enabled: false },
   { path: '/prestaciones', title: 'Prestaciones', icon: FiActivity, enabled: false },
   { path: '/obras-sociales', title: 'Obras sociales', icon: FiShield, enabled: false },
-  { path: '/consultorios', title: 'Consultorios', icon: FiHome, enabled: true },
   { path: '/configuracion', title: 'Configuración', icon: FiSettings, enabled: true },
 ];
 
