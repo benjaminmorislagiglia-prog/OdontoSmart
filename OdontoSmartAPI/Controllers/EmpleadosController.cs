@@ -206,7 +206,7 @@ public class EmpleadosController : ControllerBase
         {
             return NotFound(new
             {
-                mensaje = "El empleado no existe o ya está desactivado."
+                mensaje = "El empleado no existe o ya está inactivo."
             });
         }
 

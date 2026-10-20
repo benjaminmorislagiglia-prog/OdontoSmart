@@ -25,12 +25,12 @@ assert.ok(directions.length && jobs.length && rooms.length, 'Faltan catálogos l
 const originals = Object.fromEntries(await Promise.all(['Pacientes','Empleados','Odontologos'].map(async route=>[route,await request(route)])));
 let patient, employee, doctor, turn, association, specialty, room;
 try {
-  const patientBody = {dni:stamp,nombre:'Verificación',apellido:'Gestión '+stamp,telefono:'1100000000',correo:null,
+  const patientBody = {dni:'00'+stamp,nombre:'Verificación',apellido:'Gestión',telefono:'1100000000',correo:null,
     fechaNacimiento:'1990-05-10',idDireccion:directions[0].idDireccion,idObraSocial:null};
   patient = await request('Pacientes','POST',patientBody,201);
   await request('Pacientes/'+patient.idPaciente,'PUT',{...patientBody,telefono:'1100000001'},204);
   assert.equal((await request('Pacientes/'+patient.idPaciente)).telefono,'1100000001');
-  const employeeBody = {dni:'E'+stamp,nombre:'Verificación',apellido:'Personal '+stamp,telefono:'1100000000',correo:null,
+  const employeeBody = {dni:'01'+stamp,nombre:'Verificación',apellido:'Personal',telefono:'1100000000',correo:null,
     idPuesto:jobs[0].idPuesto,idDireccion:directions[0].idDireccion};
   employee = await request('Empleados','POST',employeeBody,201);
   await request('Empleados/'+employee.idEmpleado,'PUT',{...employeeBody,telefono:'1100000002'},204);

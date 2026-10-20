@@ -12,6 +12,7 @@ import { resourceService, listIncludingInactive, anularHistoriaClinica } from '.
 import { formatDate, formatTime } from '../utils/formatters';
 import { apiErrorMessage } from '../services/api';
 import { useNotification } from '../context/NotificationContext';
+import { digitsOnly, validateFields } from '../utils/formValidation.js';
 
 export default function ClinicEntityPage({config}) {
  const service = resourceService(config.resource);
@@ -34,6 +35,8 @@ export default function ClinicEntityPage({config}) {
  const [view,setView] = useState(null);
  const [busy,setBusy] = useState(false);
  const [message,setMessage] = useState('');
+ const [errors,setErrors] = useState({});
+ const formRef = useRef(null);
  const [remove,setRemove] = useState(null);
  const [reactivate,setReactivate] = useState(null);
  const [annul,setAnnul] = useState(null);
@@ -48,15 +51,18 @@ export default function ClinicEntityPage({config}) {
    const current = await service.get(row[config.id],{incluirInactivos:!!config.splitActive});
    if(edit && config.splitActive && !isActive(current)){notify('Reactivá el registro antes de modificar sus datos.','warning');return;}
    if(edit && config.annul && current.anulado){setView(current);setValues(null);notify('El registro está anulado y sólo admite consulta.','warning');return;}
-   if(edit){setEditing(current[config.id]);setValues(Object.fromEntries(config.fields.map(f=>[f.key,current[f.key]??''])));setView(null);}
+   if(edit){setEditing(current[config.id]);setValues(Object.fromEntries(config.fields.map(f=>[f.key,current[f.key]??''])));setErrors({});setView(null);}
    else {setView(current);setValues(null);}
   }catch(e){notify(apiErrorMessage(e),'error');}
   finally{lock.current=false;setBusy(false);}
  }
- function create(){setEditing(null);setValues(Object.fromEntries(config.fields.map(f=>[f.key,''])));setMessage('');setView(null);}
+ function create(){setEditing(null);setValues(Object.fromEntries(config.fields.map(f=>[f.key,''])));setErrors({});setMessage('');setView(null);}
  async function save(event) {
   event.preventDefault();if(lock.current)return;
-  const payload=Object.fromEntries(config.fields.map(f=>[f.key,values[f.key]===''?null:f.type==='select'||f.type==='number'?Number(values[f.key]):String(values[f.key]).trim()]));
+  const validation=validateFields(config.fields,values,data.refs,editing);
+  setErrors(validation);setMessage('');
+  if(Object.keys(validation).length){formRef.current?.elements.namedItem(Object.keys(validation)[0])?.focus();return;}
+  const payload=Object.fromEntries(config.fields.map(f=>{const value=String(values[f.key]??'').trim();return [f.key,value===''?null:f.type==='select'||f.type==='number'?Number(value):value];}));
   lock.current=true;setBusy(true);setMessage('');
   try{if(editing)await service.update(editing,payload);else await service.create(payload);setValues(null);notify('Datos guardados correctamente.','success');reload();}
   catch(e){const text=apiErrorMessage(e);setMessage(text);notify(text,'error');}
@@ -65,13 +71,13 @@ export default function ClinicEntityPage({config}) {
  async function confirmRemove(){
   if(lock.current||!remove)return;
   lock.current=true;setBusy(true);setMessage('');
-  try{await service.remove(remove[config.id]);setRemove(null);setView(null);notify(config.softDelete?'Registro desactivado.':'Registro eliminado.','success');reload();}
+  try{await service.remove(remove[config.id]);setRemove(null);setView(null);notify(config.softDelete?'Registro marcado como inactivo.':'Registro eliminado.','success');reload();}
   catch(e){const text=apiErrorMessage(e);setMessage(text);notify(text,'error');}
   finally{lock.current=false;setBusy(false);}
  }
  function display(row,column){
   const [key,,source,idKey,toLabel]=column;
-  if(config.splitActive && key==='activo')return isActive(row)?'Activo':'Desactivado';
+  if(config.splitActive && key==='activo')return isActive(row)?'Activo':'Inactivo';
   if(config.annul && key==='anulado')return row.anulado?'Anulado':'Vigente';
   if(source){const item=data.refs[source]?.find(item=>item[idKey]===row[key]);return item?toLabel(item,data.refs):row[key]==null?'Sin informar':'Referencia '+row[key];}
   return row[key]??'—';
@@ -102,15 +108,33 @@ export default function ClinicEntityPage({config}) {
   }catch(e){const text=apiErrorMessage(e);setAnnulError(text);notify(text,'error');}
   finally{lock.current=false;setBusy(false);}
  }
+ function changeField(field,value){
+  if(field.digitsOnly&&!digitsOnly(value)){setErrors(previous=>({...previous,[field.key]:field.validationMessage}));return;}
+  setValues(previous=>({...previous,[field.key]:value,...(field.key==='idPaciente'?{idTurno:''}:{})}));
+  setErrors(previous=>({...previous,[field.key]:undefined}));
+ }
+ function renderField(field){
+  const id='field-'+field.key;
+  const common={id,name:field.key,value:values[field.key],required:field.required,'aria-invalid':!!errors[field.key],
+   'aria-describedby':errors[field.key]?id+'-error':field.help?id+'-help':undefined,onChange:event=>changeField(field,event.target.value)};
+  return <div className="col-12 col-md-6" key={field.key}><label className="form-label" htmlFor={id}>{field.label}{field.required?' *':''}</label>
+   {field.type==='select'?<select {...common} className={'form-select'+(errors[field.key]?' is-invalid':'')} disabled={!!editing&&field.immutable}>
+    <option value="">{field.required?'Seleccionar':'Sin informar'}</option>
+    {data.refs[field.source].filter(item=>!field.filter||field.filter(item,values,data.refs,editing)).map(item=><option key={item[field.idKey]} value={item[field.idKey]}>{field.toLabel(item,data.refs)}</option>)}
+   </select>:<input {...common} className={'form-control'+(errors[field.key]?' is-invalid':'')} type={field.type} inputMode={field.inputMode} pattern={field.pattern} min={field.min} max={field.max} step={field.step} minLength={field.minLength} maxLength={field.maxLength}/>}
+   {field.help&&<p className="form-help" id={id+'-help'}>{field.help}</p>}
+   {errors[field.key]&&<div className="invalid-feedback" id={id+'-error'}>{errors[field.key]}</div>}
+  </div>;
+ }
  if(loading)return <LoadingState/>;
  if(error)return <ErrorState message={error} onAction={reload}/>;
  const filtered=rows=>rows.filter(row=>config.columns.map(c=>display(row,c)).join(' ').toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es')));
  return <><PageHeader eyebrow="ODONTOSMART" title={config.title} description="Consulta y gestión de información de la clínica."><button className="btn btn-primary" onClick={create} disabled={busy}>Registrar</button></PageHeader>
  {(config.links||[]).length>0&&<div className="patient-actions mb-3">{config.links.map(([url,label])=><Link key={url} to={url} className="btn btn-outline-secondary">{label}</Link>)}</div>}
- {values&&<form className="panel patient-form mb-3" onSubmit={save}><h2>{editing?'Modificar registro':'Registrar'}</h2><fieldset disabled={busy}><div className="row g-3">{config.fields.map(f=><div className="col-12 col-md-6" key={f.key}><label className="form-label" htmlFor={'field-'+f.key}>{f.label}{f.required?' *':''}</label>{f.type==='select'?<select id={'field-'+f.key} className="form-select" value={values[f.key]} required={f.required} disabled={!!editing&&f.immutable} onChange={e=>setValues(v=>({...v,[f.key]:e.target.value,...(f.key==='idPaciente'?{idTurno:''}:{})}))}><option value="">{f.required?'Seleccionar':'Sin informar'}</option>{data.refs[f.source].filter(item=>!f.filter||f.filter(item,values,data.refs,editing)).map(item=><option key={item[f.idKey]} value={item[f.idKey]}>{f.toLabel(item,data.refs)}</option>)}</select>:<input id={'field-'+f.key} className="form-control" type={f.type} required={f.required} min={f.min} minLength={f.minLength} maxLength={f.maxLength} value={values[f.key]} onChange={e=>setValues(v=>({...v,[f.key]:e.target.value}))}/>}</div>)}</div></fieldset>{message&&<p role="alert" className="alert alert-danger mt-3">{message}</p>}<div className="patient-actions mt-3"><button disabled={busy} className="btn btn-primary">{busy?'Guardando…':'Guardar'}</button><button disabled={busy} type="button" className="btn btn-outline-secondary" onClick={()=>setValues(null)}>Cerrar</button></div></form>}
+ {values&&<form ref={formRef} noValidate className="panel patient-form mb-3" onSubmit={save}><h2>{editing?'Modificar registro':'Registrar'}</h2><fieldset disabled={busy}><div className="row g-3">{config.fields.map(renderField)}</div></fieldset>{message&&<p role="alert" className="alert alert-danger mt-3">{message}</p>}<div className="patient-actions mt-3"><button disabled={busy} className="btn btn-primary">{busy?'Guardando…':'Guardar'}</button><button disabled={busy} type="button" className="btn btn-outline-secondary" onClick={()=>setValues(null)}>Cerrar</button></div></form>}
  {view&&<section className="panel patient-form mb-3"><h2>Detalle</h2><dl className="row patient-details">{(config.detailColumns||config.columns).map(c=><div key={c[0]} className="col-12 col-md-6"><dt>{c[1]}</dt><dd>{renderValue(view,c)}</dd></div>)}</dl>{config.annul&&view.anulado&&<div className="patient-reference-note"><p><strong>Registro anulado.</strong> Se conserva para consulta histórica.</p><dl><dt>Motivo de anulación</dt><dd className="clinical-note">{view.motivoAnulacion}</dd><dt>Fecha de anulación</dt><dd>{formatDate(view.fechaAnulacion)} · {formatTime(view.fechaAnulacion)}</dd></dl></div>}<div className="patient-actions">{config.annul&&!view.anulado&&<button type="button" className="btn btn-outline-danger" disabled={busy} onClick={()=>{setAnnul(view);setReason('');setAnnulError('');}}>Anular registro</button>}<button className="btn btn-outline-secondary" disabled={busy} onClick={()=>setView(null)}>Cerrar detalle</button></div></section>}
  <section className="panel mb-3"><div className="table-toolbar pt-3"><label className="visually-hidden" htmlFor="entity-search">Buscar</label><input id="entity-search" className="form-control" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar…"/></div></section>
- {[{title:config.splitActive?config.title+' activos':config.title,rows:data.rows,inactive:false},...(config.splitActive?[{title:config.title+' desactivados',rows:data.inactive,inactive:true}]:[])].map(section=><RecordListSection key={section.title} title={section.title} rows={filtered(section.rows)} idKey={config.id} filterKey={query} emptyMessage={query?'No hay coincidencias':'No hay registros.'} columns={config.columns.map(c=>({key:c[0],label:c[1],render:row=>renderValue(row,c)}))} actions={row=><>
+ {[{title:config.splitActive?config.title+' activos':config.title,rows:data.rows,inactive:false},...(config.splitActive?[{title:config.title+' inactivos',rows:data.inactive,inactive:true}]:[])].map(section=><RecordListSection key={section.title} title={section.title} rows={filtered(section.rows)} idKey={config.id} filterKey={query} emptyMessage={query?'No hay coincidencias':'No hay registros.'} columns={config.columns.map(c=>({key:c[0],label:c[1],render:row=>renderValue(row,c)}))} actions={row=><>
    <button disabled={busy} className="btn btn-sm btn-outline-secondary" onClick={()=>open(row)}>Ver detalle</button>
    {section.inactive?<>{employeeActive(row)?<button disabled={busy} className="btn btn-sm btn-outline-primary" onClick={()=>{setMessage('');setReactivate(row);}}>Reactivar</button>:<Link className="btn btn-sm btn-outline-secondary" to="/empleados">Reactivar primero al empleado</Link>}</>:<>
     {!(config.annul&&row.anulado)&&<button disabled={busy} className="btn btn-sm btn-outline-secondary" onClick={()=>open(row,true)}>Modificar</button>}

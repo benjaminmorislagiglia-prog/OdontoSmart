@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace OdontoSmartAPI.DTOs;
+using OdontoSmartAPI.Validation;
 
 public class DireccionGuardarDto
 {
@@ -17,6 +18,7 @@ public class DireccionGuardarDto
 
     [Required(ErrorMessage = "El código postal es obligatorio.")]
     [StringLength(10, MinimumLength = 4)]
+    [RegularExpression(InputPatterns.PostalCode, ErrorMessage = "Usá entre 4 y 10 letras o números, incluyendo al menos un número.")]
     public string Cp { get; set; } = null!;
 
     [Range(1, int.MaxValue,

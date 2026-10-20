@@ -37,22 +37,33 @@ Ver [informe de revisión e integración](../docs/revision-api.md) para los camb
 
 La autenticación real sigue pendiente: el login actual de la web controla navegación localmente.
 
-## Consulta de desactivados y reactivación
+## Consulta de inactivos y reactivación
 
-Pacientes, Empleados y Odontólogos reutilizan sus campos Activo y sus endpoints GET, POST, PUT y DELETE. No hay cambios de tablas, DTOs ni mapeos EF.
+Pacientes, Empleados y Odontólogos reutilizan sus campos Activo y sus endpoints GET, POST, PUT y DELETE. Se conservan las tablas, los campos de los DTOs y los mapeos EF.
 
 | Operación | Pacientes | Empleados | Odontólogos |
 | --- | --- | --- | --- |
 | Activos (comportamiento por defecto) | GET /api/Pacientes | GET /api/Empleados | GET /api/Odontologos |
 | Desactivados | GET /api/Pacientes?activo=false | GET /api/Empleados?activo=false | GET /api/Odontologos?activo=false |
-| Detalle, admitiendo desactivados | GET /api/Pacientes/{id}?incluirInactivos=true | GET /api/Empleados/{id}?incluirInactivos=true | GET /api/Odontologos/{id}?incluirInactivos=true |
+| Detalle, admitiendo inactivos | GET /api/Pacientes/{id}?incluirInactivos=true | GET /api/Empleados/{id}?incluirInactivos=true | GET /api/Odontologos/{id}?incluirInactivos=true |
 | Reactivar el mismo registro | POST /api/Pacientes/{id}/reactivar | POST /api/Empleados/{id}/reactivar | POST /api/Odontologos/{id}/reactivar |
 
-Los nuevos POST son idempotentes y devuelven 204; si no existe el registro, devuelven 404. La reactivación sólo modifica Activo y conserva las relaciones e historial. DELETE sigue realizando baja lógica. Para pacientes y empleados un Activo nulo se considera desactivado.
+Los nuevos POST son idempotentes y devuelven 204; si no existe el registro, devuelven 404. La reactivación sólo modifica Activo y conserva las relaciones e historial. DELETE sigue realizando baja lógica. Para pacientes y empleados un Activo nulo se considera inactivo.
 
-`PUT /api/Pacientes/{id}` admite editar pacientes activos o desactivados y conserva su estado por defecto. La opción `?reactivar=true` guarda los datos y Activo = true juntos mediante el mismo SaveChangesAsync. Conserva las validaciones existentes de campos, DNI, dirección y obra social; si fallan, no guarda los cambios ni reactiva. No requiere cambios de DTOs ni tablas. La reactivación directa desde el listado sigue usando el POST existente.
+`PUT /api/Pacientes/{id}` admite editar pacientes activos o inactivos y conserva su estado por defecto. La opción `?reactivar=true` guarda los datos y Activo = true juntos mediante el mismo SaveChangesAsync. Conserva las validaciones existentes de campos, DNI, dirección y obra social; si fallan, no guarda los cambios ni reactiva. No agrega campos a los DTOs ni cambia tablas. La reactivación directa desde el listado sigue usando el POST existente.
 
-El listado de odontólogos aplica la misma disponibilidad que Turnos: odontólogo y empleado deben estar activos. La consulta de desactivados incluye tanto odontólogos desactivados por su propio campo como los vinculados con un empleado desactivado. El DTO conserva el valor original de Odontologo.Activo. Reactivar un odontólogo con empleado desactivado devuelve 409; reactivar un empleado no altera el estado propio del odontólogo. La restricción existente de un odontólogo por empleado sigue incluyendo los registros desactivados.
+Los DTOs de pacientes y empleados validan DNI numérico conservado como string, nombres con letras y teléfono con formato telefónico. Pacientes también rechaza nacimiento futuro. Direcciones exige número entero positivo y CP alfanumérico de 4 a 10 caracteres con algún dígito; Odontólogos valida matrícula, días escritos y rango horario HH:mm-HH:mm (también admite HH:mm a HH:mm). Las expresiones comunes están en `Validation/InputPatterns.cs`. Las restricciones previas de longitud, email y referencias se mantienen. Los DTOs numéricos de los demás recursos ya utilizan tipos int/decimal y rangos.
+
+Prueba específica, con la API local en ejecución:
+
+```powershell
+$env:ODONTOSMART_API_URL = 'http://localhost:5122'
+node scripts/check-input-validation.mjs
+```
+
+Comprueba errores de validación por campo, tipos JSON incorrectos y formatos válidos. Usa PUT sobre un ID previamente comprobado inexistente, sin crear o modificar registros. `check-management.mjs` comprueba además altas con DNI que conserva ceros iniciales, edición y reactivación.
+
+El listado de odontólogos aplica la misma disponibilidad que Turnos: odontólogo y empleado deben estar activos. La consulta de inactivos incluye tanto odontólogos inactivos por su propio campo como los vinculados con un empleado inactivo. El DTO conserva el valor original de Odontologo.Activo. Reactivar un odontólogo con empleado inactivo devuelve 409; reactivar un empleado no altera el estado propio del odontólogo. La restricción existente de un odontólogo por empleado sigue incluyendo los registros inactivos.
 
 Prueba del circuito completo, desde la raíz con la API en ejecución:
 

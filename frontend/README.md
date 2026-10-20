@@ -14,7 +14,7 @@ Centralizar la gestión diaria de la clínica desde una interfaz clara y accesib
 
 - Inicio y cierre de sesión con validación local y conservación de la sesión durante el uso de la pestaña.
 - Dashboard con indicadores, agenda del día, búsqueda por paciente, filtros de estado y actividad reciente. La información se consulta desde la API.
-- Gestión de pacientes con listados separados de activos y desactivados, búsqueda, detalle, registro, modificación, desactivación y reactivación.
+- Gestión de pacientes con listados separados de activos y inactivos, búsqueda, detalle, registro, modificación, desactivación y reactivación.
 - Agenda con reserva, detalle, modificación, cancelación y consulta del historial de estados. Incluye Ausente con un badge propio y conserva el turno y sus cambios anteriores.
 - Módulo independiente de Empleados: registro, detalle completo, modificación, desactivación y reactivación, con los campos existentes de la API.
 - Gestión de odontólogos a partir de un empleado existente, matrícula y días/horarios de atención. Especialidades y su asignación se gestionan desde Odontólogos.
@@ -32,7 +32,7 @@ La sección Configuración permite elegir el tema claro u oscuro, usar texto gra
 
 La cantidad de filas (10, 25 o 50) se aplica mediante paginación local a Dashboard, Pacientes, Agenda y los listados de catálogos. Los filtros se aplican al conjunto completo antes de paginar; cambiar un filtro o la cantidad de filas vuelve a la primera página.
 
-Recordar filtros y búsquedas está desactivado inicialmente. Al activarlo, conserva los valores de los controles de esas pantallas; al desactivarlo, elimina los filtros guardados. Las preferencias utilizan `localStorage`, no guardan respuestas de la API ni credenciales y no cambian datos de la clínica. Si el navegador bloquea el almacenamiento, siguen funcionando durante la sesión actual.
+Recordar filtros y búsquedas está inactivo inicialmente. Al activarlo, conserva los valores de los controles de esas pantallas; al desactivarlo, elimina los filtros guardados. Las preferencias utilizan `localStorage`, no guardan respuestas de la API ni credenciales y no cambian datos de la clínica. Si el navegador bloquea el almacenamiento, siguen funcionando durante la sesión actual.
 
 Sesión muestra el usuario del contexto de autenticación y permite cerrar sesión con el flujo existente.
 
@@ -46,13 +46,29 @@ Detalle ofrece Anular registro con confirmación y motivo obligatorio de hasta 3
 
 Pacientes, Empleados, Agenda, Odontólogos, Especialidades, Consultorios, Historia clínica, Estados de turno y Dashboard utilizan Axios y servicios HTTP separados de las páginas para consumir la API ASP.NET Core. Implementa GET y POST sobre `/api/Pacientes`, y GET, PUT y DELETE sobre `/api/Pacientes/{id}`.
 
-Pacientes, Empleados y Odontólogos consultan los desactivados mediante `?activo=false`, permiten consultar su detalle con `?incluirInactivos=true` y reactivan el mismo registro mediante `POST /api/{recurso}/{id}/reactivar`. DELETE conserva la baja lógica. Los tres módulos comparten presentación de tablas, badges, confirmaciones y notificaciones.
+Pacientes, Empleados y Odontólogos consultan los inactivos mediante `?activo=false`, permiten consultar su detalle con `?incluirInactivos=true` y reactivan el mismo registro mediante `POST /api/{recurso}/{id}/reactivar`. DELETE conserva la baja lógica. Los tres módulos comparten presentación de tablas, badges, confirmaciones y notificaciones.
 
-Los pacientes desactivados también permiten Modificar desde el listado y el detalle. En el formulario, Guardar paciente conserva su estado desactivado; Guardar y reactivar actualiza sus datos y lo activa en una única operación. Ambos flujos abren después el detalle del mismo paciente, para poder seguir consultándolo. Las validaciones se aplican antes de guardar y reactivar.
+Los pacientes inactivos también permiten Modificar desde el listado y el detalle. En el formulario, Guardar paciente conserva su estado inactivo; Guardar y reactivar actualiza sus datos y lo activa en una única operación. Ambos flujos abren después el detalle del mismo paciente, para poder seguir consultándolo. Las validaciones se aplican antes de guardar y reactivar.
+
+## Tipos y validación de campos
+
+Los estados visibles de Pacientes, Empleados y Odontólogos son Activo e Inactivo. Sus acciones conservan los nombres Desactivar y Reactivar.
+
+- DNI: sólo dígitos, hasta 20 caracteres, conservando ceros iniciales. La entrada usa teclado numérico y rechaza letras y símbolos sin convertir el identificador a un número.
+- Nombre y apellido: letras, tildes, espacios, puntos, apóstrofes y guiones; no admiten números.
+- Teléfono: opcional, con dígitos y formato telefónico (prefijo +, espacios, paréntesis, puntos o guiones), hasta 20 caracteres. Correo utiliza formato de email.
+- Número de dirección: entero positivo hasta 2147483647; rechaza decimales y notación exponencial. Calle admite nombres con números, por ejemplo 9 de Julio.
+- Código postal: entre 4 y 10 letras o dígitos, con al menos un dígito; admite 5000 y X5000ABC. Matrícula admite letras, números y separadores.
+- Atención: días escritos con letras y rango horario de 24 horas, por ejemplo 09:00-17:00 o 09:00 a 17:00. La fecha de nacimiento debe existir y no ser futura.
+- Las referencias se seleccionan de los catálogos. Los campos clínicos mantienen texto libre con los límites actuales. Búsquedas, login y preferencias conservan sus tipos correspondientes.
+
+Los errores se muestran junto al campo y se enfoca el primero que requiere corrección. La API valida también los formatos y tipos. No se cambia el esquema de base de datos.
+
+Desde frontend: `node scripts/check-forms.mjs` verifica formatos válidos, inválidos, límites y referencias; `node scripts/check-pacientes.mjs` comprueba el contrato HTTP de pacientes.
 
 El menú principal incluye Empleados. Especialidades se encuentra en `/odontologos/catalogo-especialidades` y la asignación en `/odontologos/especialidades`; las rutas anteriores de especialidades y empleados redirigen a su ubicación actual. Los módulos futuros deshabilitados se conservan.
 
-Un odontólogo sólo está disponible si están activos su propio registro y el empleado asociado. Reactivar al empleado no cambia el campo Activo del odontólogo. Si el empleado está desactivado, la web indica que debe reactivarse primero. El selector de empleados excluye los ya asociados, incluso si su odontólogo está desactivado; la API valida también esta relación única.
+Un odontólogo sólo está disponible si están activos su propio registro y el empleado asociado. Reactivar al empleado no cambia el campo Activo del odontólogo. Si el empleado está inactivo, la web indica que debe reactivarse primero. El selector de empleados excluye los ya asociados, incluso si su odontólogo está inactivo; la API valida también esta relación única.
 
 Consultorios sigue representando salas físicas de una única clínica, con sus datos existentes y sus formularios. No se agregan sucursales ni datos para completar pantallas.
 
