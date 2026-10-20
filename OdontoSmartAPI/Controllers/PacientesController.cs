@@ -136,7 +136,7 @@ public class PacientesController : ControllerBase
     // PUT: api/pacientes/5
     [HttpPut("{id:int}")]
     public async Task<IActionResult>
-        PutPaciente(int id, PacienteGuardarDto dto)
+        PutPaciente(int id, PacienteGuardarDto dto, [FromQuery] bool reactivar = false)
     {
 
         var direccionExiste = await _context.Direccions
@@ -151,7 +151,7 @@ public class PacientesController : ControllerBase
 
         var paciente = await _context.Pacientes
             .FirstOrDefaultAsync(p =>
-                p.IdPaciente == id && p.Activo == true);
+                p.IdPaciente == id);
 
         if (paciente == null)
             return NotFound("Paciente no encontrado.");
@@ -188,6 +188,8 @@ public class PacientesController : ControllerBase
         paciente.FechaNacimiento = dto.FechaNacimiento!.Value;
         paciente.IdObraSocial = dto.IdObraSocial;
         paciente.IdDireccion = dto.IdDireccion;
+        // Guarda datos y reactivación juntos; editar por sí solo conserva el estado.
+        if (reactivar) paciente.Activo = true;
 
         await _context.SaveChangesAsync();
 

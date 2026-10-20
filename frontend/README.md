@@ -48,6 +48,8 @@ Pacientes, Empleados, Agenda, Odontólogos, Especialidades, Consultorios, Histor
 
 Pacientes, Empleados y Odontólogos consultan los desactivados mediante `?activo=false`, permiten consultar su detalle con `?incluirInactivos=true` y reactivan el mismo registro mediante `POST /api/{recurso}/{id}/reactivar`. DELETE conserva la baja lógica. Los tres módulos comparten presentación de tablas, badges, confirmaciones y notificaciones.
 
+Los pacientes desactivados también permiten Modificar desde el listado y el detalle. En el formulario, Guardar paciente conserva su estado desactivado; Guardar y reactivar actualiza sus datos y lo activa en una única operación. Ambos flujos abren después el detalle del mismo paciente, para poder seguir consultándolo. Las validaciones se aplican antes de guardar y reactivar.
+
 El menú principal incluye Empleados. Especialidades se encuentra en `/odontologos/catalogo-especialidades` y la asignación en `/odontologos/especialidades`; las rutas anteriores de especialidades y empleados redirigen a su ubicación actual. Los módulos futuros deshabilitados se conservan.
 
 Un odontólogo sólo está disponible si están activos su propio registro y el empleado asociado. Reactivar al empleado no cambia el campo Activo del odontólogo. Si el empleado está desactivado, la web indica que debe reactivarse primero. El selector de empleados excluye los ya asociados, incluso si su odontólogo está desactivado; la API valida también esta relación única.

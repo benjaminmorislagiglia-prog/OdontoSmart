@@ -53,6 +53,11 @@ try {
   assert.equal(calls.at(-1).url, '/api/Pacientes/7/reactivar');
   assert.ok(swagger.paths['/api/Pacientes/{id}/reactivar'].post);
   assert.ok(swagger.paths['/api/Pacientes/{id}/reactivar'].post.responses['204']);
+  await service.updatePaciente(7,payload,{reactivar:true});
+  assert.equal(calls.at(-1).method,'put');
+  assert.deepEqual(calls.at(-1).params,{reactivar:true});
+  assert.deepEqual(JSON.parse(calls.at(-1).data),payload);
+  assert.ok(swagger.paths['/api/Pacientes/{id}'].put.parameters.some(p=>p.name==='reactivar'&&p.in==='query'&&p.schema.default===false));
   await assert.rejects(service.reactivatePaciente('../Empleados'));
   assert.ok(validatePaciente(emptyPaciente).dni);
   assert.ok(validatePaciente({ ...form, idDireccion: '' }).idDireccion);

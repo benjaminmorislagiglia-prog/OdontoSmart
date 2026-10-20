@@ -50,6 +50,8 @@ Pacientes, Empleados y Odontólogos reutilizan sus campos Activo y sus endpoints
 
 Los nuevos POST son idempotentes y devuelven 204; si no existe el registro, devuelven 404. La reactivación sólo modifica Activo y conserva las relaciones e historial. DELETE sigue realizando baja lógica. Para pacientes y empleados un Activo nulo se considera desactivado.
 
+`PUT /api/Pacientes/{id}` admite editar pacientes activos o desactivados y conserva su estado por defecto. La opción `?reactivar=true` guarda los datos y Activo = true juntos mediante el mismo SaveChangesAsync. Conserva las validaciones existentes de campos, DNI, dirección y obra social; si fallan, no guarda los cambios ni reactiva. No requiere cambios de DTOs ni tablas. La reactivación directa desde el listado sigue usando el POST existente.
+
 El listado de odontólogos aplica la misma disponibilidad que Turnos: odontólogo y empleado deben estar activos. La consulta de desactivados incluye tanto odontólogos desactivados por su propio campo como los vinculados con un empleado desactivado. El DTO conserva el valor original de Odontologo.Activo. Reactivar un odontólogo con empleado desactivado devuelve 409; reactivar un empleado no altera el estado propio del odontólogo. La restricción existente de un odontólogo por empleado sigue incluyendo los registros desactivados.
 
 Prueba del circuito completo, desde la raíz con la API en ejecución:

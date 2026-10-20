@@ -19,13 +19,13 @@ export default function PacienteFormPage() {
   return {patient, catalogs};
  }, [id]);
  const { data, loading, error, reload } = usePacienteQuery(loader);
- async function save(values) {
+ async function save(values, { reactivar = false } = {}) {
   try {
-   if (editing) await updatePaciente(id, values); else await createPaciente(values);
-   notify(editing ? 'Paciente actualizado correctamente.' : 'Paciente registrado correctamente.', 'success');
+   if (editing) await updatePaciente(id, values, { reactivar }); else await createPaciente(values);
+   notify(reactivar ? 'Datos guardados y paciente reactivado correctamente.' : editing ? 'Paciente actualizado correctamente.' : 'Paciente registrado correctamente.', 'success');
    // Refetch en destino: PUT no documenta un cuerpo de respuesta.
    navigate(editing ? '/pacientes/' + id : '/pacientes');
   } catch (e) { const message = apiErrorMessage(e); notify(message, 'error'); throw new Error(message); }
  }
- return <><PageHeader eyebrow="PACIENTES" title={editing ? 'Editar paciente' : 'Registrar paciente'} description="Completá los datos personales del paciente."><Link to="/pacientes" className="btn btn-outline-secondary">Ver pacientes</Link></PageHeader>{loading ? <LoadingState message="Cargando formulario…" /> : error ? <ErrorState message={error} onAction={reload} /> : editing && data.patient.activo !== true ? <ErrorState title="Paciente desactivado" message="Reactivá al paciente desde el listado antes de modificar sus datos." /> : <PacienteForm key={id || 'new'} patient={data.patient} catalogs={data.catalogs} onSave={save} cancelTo={editing ? '/pacientes/' + id : '/pacientes'} />}</>;
+ return <><PageHeader eyebrow="PACIENTES" title={editing ? 'Editar paciente' : 'Registrar paciente'} description="Completá los datos personales del paciente."><Link to="/pacientes" className="btn btn-outline-secondary">Ver pacientes</Link></PageHeader>{loading ? <LoadingState message="Cargando formulario…" /> : error ? <ErrorState message={error} onAction={reload} /> : <PacienteForm key={id || 'new'} patient={data.patient} catalogs={data.catalogs} onSave={save} cancelTo={editing ? '/pacientes/' + id : '/pacientes'} />}</>;
 }
