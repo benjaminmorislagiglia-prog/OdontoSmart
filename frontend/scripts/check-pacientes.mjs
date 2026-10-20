@@ -43,6 +43,17 @@ try {
   }
   assert.deepEqual(JSON.parse(calls[2].data), payload);
   assert.deepEqual(JSON.parse(calls[3].data), payload);
+  assert.deepEqual(calls[1].params, {incluirInactivos:true});
+  result = [{idPaciente:7, activo:false}];
+  assert.equal((await service.getPacientes({activo:false}))[0].activo, false);
+  assert.deepEqual(calls.at(-1).params, {activo:false});
+  result = undefined;
+  await service.reactivatePaciente(7);
+  assert.equal(calls.at(-1).method, 'post');
+  assert.equal(calls.at(-1).url, '/api/Pacientes/7/reactivar');
+  assert.ok(swagger.paths['/api/Pacientes/{id}/reactivar'].post);
+  assert.ok(swagger.paths['/api/Pacientes/{id}/reactivar'].post.responses['204']);
+  await assert.rejects(service.reactivatePaciente('../Empleados'));
   assert.ok(validatePaciente(emptyPaciente).dni);
   assert.ok(validatePaciente({ ...form, idDireccion: '' }).idDireccion);
   assert.ok(validatePaciente({ ...form, idDireccion: '0' }).idDireccion);
@@ -57,5 +68,5 @@ try {
   await assert.rejects(service.createPaciente(payload), error => apiErrorMessage(error) === 'El DNI ya existe.');
   assert.match(apiErrorMessage({ request: {} }), /CORS/);
   assert.match(apiErrorMessage({ code: 'ECONNABORTED' }), /demasiado/);
-  console.log('Contrato de Pacientes, cinco métodos, payload, validaciones y errores: OK (adaptador controlado, sin API real).');
+  console.log('Contrato de Pacientes, consulta de inactivos, reactivación, payload, validaciones y errores: OK (adaptador controlado, sin API real).');
 } finally { await server.close(); }

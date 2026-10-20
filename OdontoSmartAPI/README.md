@@ -37,6 +37,30 @@ Ver [informe de revisión e integración](../docs/revision-api.md) para los camb
 
 La autenticación real sigue pendiente: el login actual de la web controla navegación localmente.
 
+## Consulta de desactivados y reactivación
+
+Pacientes, Empleados y Odontólogos reutilizan sus campos Activo y sus endpoints GET, POST, PUT y DELETE. No hay cambios de tablas, DTOs ni mapeos EF.
+
+| Operación | Pacientes | Empleados | Odontólogos |
+| --- | --- | --- | --- |
+| Activos (comportamiento por defecto) | GET /api/Pacientes | GET /api/Empleados | GET /api/Odontologos |
+| Desactivados | GET /api/Pacientes?activo=false | GET /api/Empleados?activo=false | GET /api/Odontologos?activo=false |
+| Detalle, admitiendo desactivados | GET /api/Pacientes/{id}?incluirInactivos=true | GET /api/Empleados/{id}?incluirInactivos=true | GET /api/Odontologos/{id}?incluirInactivos=true |
+| Reactivar el mismo registro | POST /api/Pacientes/{id}/reactivar | POST /api/Empleados/{id}/reactivar | POST /api/Odontologos/{id}/reactivar |
+
+Los nuevos POST son idempotentes y devuelven 204; si no existe el registro, devuelven 404. La reactivación sólo modifica Activo y conserva las relaciones e historial. DELETE sigue realizando baja lógica. Para pacientes y empleados un Activo nulo se considera desactivado.
+
+El listado de odontólogos aplica la misma disponibilidad que Turnos: odontólogo y empleado deben estar activos. La consulta de desactivados incluye tanto odontólogos desactivados por su propio campo como los vinculados con un empleado desactivado. El DTO conserva el valor original de Odontologo.Activo. Reactivar un odontólogo con empleado desactivado devuelve 409; reactivar un empleado no altera el estado propio del odontólogo. La restricción existente de un odontólogo por empleado sigue incluyendo los registros desactivados.
+
+Prueba del circuito completo, desde la raíz con la API en ejecución:
+
+```powershell
+$env:ODONTOSMART_API_URL = 'http://localhost:5122'
+node scripts/check-management.mjs --allow-write
+```
+
+La prueba crea registros identificados con “Verificación”, valida CRUD, reactivación, disponibilidad, especialidades, consultorios y los cinco estados de Agenda. Conserva el turno cancelado y su historia clínica, desactiva el paciente, empleado y odontólogo de prueba y retira únicamente su especialidad, asociación y consultorio temporales sin historial. No modifica los registros existentes.
+
 ## Estados de turno y Ausente
 
 El catálogo incluye Pendiente, Confirmado, Atendido, Cancelado y Ausente. `Actualizacion Estados-Turno.sql` incorpora los faltantes mediante `IF NOT EXISTS`, conservando IDs y nombres existentes. El script general `OdontoSmart.sql` también incluye el catálogo completo para nuevas instalaciones. No se modifican tablas, columnas ni mapeos de Entity Framework.

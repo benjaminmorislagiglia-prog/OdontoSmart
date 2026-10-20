@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OdontoSmartAPI.Data;
@@ -38,11 +38,11 @@ public class PacientesController : ControllerBase
     // GET: api/pacientes
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PacienteDto>>>
-        GetPacientes()
+        GetPacientes([FromQuery] bool activo = true)
     {
         var pacientes = await _context.Pacientes
             .AsNoTracking()
-            .Where(p => p.Activo == true)
+            .Where(p => activo ? p.Activo == true : p.Activo != true)
             .Select(p => new PacienteDto
             {
                 IdPaciente = p.IdPaciente,
@@ -64,12 +64,12 @@ public class PacientesController : ControllerBase
     // GET: api/pacientes/5
     [HttpGet("{id:int}")]
     public async Task<ActionResult<PacienteDto>>
-        GetPaciente(int id)
+        GetPaciente(int id, [FromQuery] bool incluirInactivos = false)
     {
         var paciente = await _context.Pacientes
             .AsNoTracking()
             .FirstOrDefaultAsync(p =>
-                p.IdPaciente == id && p.Activo == true);
+                p.IdPaciente == id && (incluirInactivos || p.Activo == true));
 
         if (paciente == null)
             return NotFound("Paciente no encontrado.");
@@ -194,6 +194,20 @@ public class PacientesController : ControllerBase
         return NoContent();
     }
 
+    // Reactivación: recupera el mismo registro y todas sus relaciones.
+    [HttpPost("{id:int}/reactivar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReactivarPaciente(int id)
+    {
+        var registro = await _context.Pacientes.FirstOrDefaultAsync(r => r.IdPaciente == id);
+        if (registro == null) return NotFound("No se encontró el registro.");
+
+        registro.Activo = true;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
     // DELETE: api/pacientes/5
     // Baja lógica: no elimina el historial del paciente
     [HttpDelete("{id:int}")]
@@ -207,7 +221,7 @@ public class PacientesController : ControllerBase
         {
             return NotFound(new
             {
-                mensaje = "El paciente no existe o ya está dado de baja."
+                mensaje = "El paciente no existe o ya está desactivado."
             });
         }
 

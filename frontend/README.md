@@ -14,11 +14,12 @@ Centralizar la gestión diaria de la clínica desde una interfaz clara y accesib
 
 - Inicio y cierre de sesión con validación local y conservación de la sesión durante el uso de la pestaña.
 - Dashboard con indicadores, agenda del día, búsqueda por paciente, filtros de estado y actividad reciente. La información se consulta desde la API.
-- Gestión de pacientes: listado, búsqueda, consulta de detalle, registro, modificación y desactivación mediante baja lógica.
+- Gestión de pacientes con listados separados de activos y desactivados, búsqueda, detalle, registro, modificación, desactivación y reactivación.
 - Agenda con reserva, detalle, modificación, cancelación y consulta del historial de estados. Incluye Ausente con un badge propio y conserva el turno y sus cambios anteriores.
-- Gestión de odontólogos, días/horarios de atención y asignación de especialidades.
+- Módulo independiente de Empleados: registro, detalle completo, modificación, desactivación y reactivación, con los campos existentes de la API.
+- Gestión de odontólogos a partir de un empleado existente, matrícula y días/horarios de atención. Especialidades y su asignación se gestionan desde Odontólogos.
 - Registro y consulta de consultorios, especialidades e historias clínicas; anulación de historias con motivo y fecha, conservando su contenido.
-- Catálogo de estados de turno y formularios auxiliares de empleados y direcciones.
+- Catálogo de estados de turno y formulario auxiliar de direcciones. El cambio de estados sigue en Agenda, con su control existente.
 - Navegación con menú lateral adaptable, rutas protegidas y página para direcciones inexistentes.
 - Configuración con apariencia claro/oscuro, accesibilidad y preferencias de listados guardadas en el navegador.
 - Estados de carga, error y ausencia de datos, notificaciones y confirmación antes de desactivar un paciente.
@@ -43,7 +44,15 @@ Detalle ofrece Anular registro con confirmación y motivo obligatorio de hasta 3
 
 ## Integración con API
 
-Pacientes, Agenda, Odontólogos, Especialidades, Consultorios, Historia clínica, Estados de turno y Dashboard utilizan Axios y servicios HTTP separados de las páginas para consumir la API ASP.NET Core. Implementa GET y POST sobre `/api/Pacientes`, y GET, PUT y DELETE sobre `/api/Pacientes/{id}`.
+Pacientes, Empleados, Agenda, Odontólogos, Especialidades, Consultorios, Historia clínica, Estados de turno y Dashboard utilizan Axios y servicios HTTP separados de las páginas para consumir la API ASP.NET Core. Implementa GET y POST sobre `/api/Pacientes`, y GET, PUT y DELETE sobre `/api/Pacientes/{id}`.
+
+Pacientes, Empleados y Odontólogos consultan los desactivados mediante `?activo=false`, permiten consultar su detalle con `?incluirInactivos=true` y reactivan el mismo registro mediante `POST /api/{recurso}/{id}/reactivar`. DELETE conserva la baja lógica. Los tres módulos comparten presentación de tablas, badges, confirmaciones y notificaciones.
+
+El menú principal incluye Empleados. Especialidades se encuentra en `/odontologos/catalogo-especialidades` y la asignación en `/odontologos/especialidades`; las rutas anteriores de especialidades y empleados redirigen a su ubicación actual. Los módulos futuros deshabilitados se conservan.
+
+Un odontólogo sólo está disponible si están activos su propio registro y el empleado asociado. Reactivar al empleado no cambia el campo Activo del odontólogo. Si el empleado está desactivado, la web indica que debe reactivarse primero. El selector de empleados excluye los ya asociados, incluso si su odontólogo está desactivado; la API valida también esta relación única.
+
+Consultorios sigue representando salas físicas de una única clínica, con sus datos existentes y sus formularios. No se agregan sucursales ni datos para completar pantallas.
 
 La URL base se configura mediante `VITE_API_URL`. Copiar `.env.example` a `.env.local`, completar la URL real de la API con su puerto, sin agregar la ruta del recurso, y reiniciar Vite. No colocar contraseñas ni tokens en variables públicas del frontend.
 

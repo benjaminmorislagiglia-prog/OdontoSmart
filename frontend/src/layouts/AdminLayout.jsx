@@ -15,7 +15,7 @@ import { FaTooth as LuTooth } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import '../styles/auth.css';
 
-const navigation = activeModules;
+const navigation = activeModules.filter(item => item.sidebar !== false);
 
 function SidebarContent({ onNavigate, collapsed = false }) {
   return <>
@@ -38,7 +38,7 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useStoredPreference('odontosmart.sidebar-collapsed', false, value => typeof value === 'boolean');
   const { pathname } = useLocation();
-  const section = navigation.find(item => item.path === pathname || pathname.startsWith(item.path + '/'))?.title || 'Página no encontrada';
+  const section = activeModules.find(item => item.path === pathname || pathname.startsWith(item.path + '/'))?.title || 'Página no encontrada';
   return (
     <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
       <a href="#main-content" className="skip-link">Saltar al contenido</a>
