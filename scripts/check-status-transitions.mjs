@@ -4,7 +4,7 @@ const origin = process.env.ODONTOSMART_API_URL;
 if (!origin || !['localhost', '127.0.0.1'].includes(new URL(origin).hostname))
   throw Error('Configurá ODONTOSMART_API_URL con una API local de desarrollo.');
 if (!process.argv.includes('--allow-write'))
-  throw Error('Usar --allow-write: crea siete turnos de prueba y conserva su historial.');
+  throw Error('Usar --allow-write: crea seis turnos de prueba y conserva su historial.');
 
 let checks = 0;
 async function request(route, method = 'GET', body, expected = 200) {
@@ -26,7 +26,7 @@ const byName = Object.fromEntries(names.map(name => {
   assert.equal(matches.length, 1, 'Debe existir un único estado ' + name);
   return [name, matches[0].idEstadoTurno];
 }));
-const allowed = {Pendiente: ['Confirmado', 'Cancelado', 'Ausente'], Confirmado: ['Atendido', 'Cancelado', 'Ausente']};
+const allowed = {Pendiente: ['Confirmado', 'Cancelado'], Confirmado: ['Atendido', 'Cancelado', 'Ausente']};
 const originals = await request('Turnos');
 const originalHistory = await request('historialestadoturno');
 const patients = await request('Pacientes');
@@ -46,7 +46,7 @@ const freeSlots = day => Array.from({length:48}, (_, index) => `${String(Math.fl
     (t.idOdontologo === dentists[0].idOdontologo || t.idConsultorio === rooms[0].idConsultorio)));
 const slots = freeSlots(date);
 const futureSlots = freeSlots(futureDate);
-assert.ok(slots.length >= 6 && futureSlots.length, 'No hay horarios libres para la prueba.');
+assert.ok(slots.length >= 5 && futureSlots.length, 'No hay horarios libres para la prueba.');
 const created = [];
 async function create(day, time) {
   const turn = await request('Turnos', 'POST', {fecha:day, hora:time,
@@ -84,7 +84,7 @@ async function blocked(turn, target, method='POST') {
 }
 
 for (const [index, [source, target]] of [
-  ['Pendiente','Confirmado'], ['Pendiente','Cancelado'], ['Pendiente','Ausente'],
+  ['Pendiente','Confirmado'], ['Pendiente','Cancelado'],
   ['Confirmado','Atendido'], ['Confirmado','Cancelado'], ['Confirmado','Ausente'],
 ].entries()) {
   const turn = await create(date, slots[index]);
@@ -92,7 +92,10 @@ for (const [index, [source, target]] of [
   const current = await getTurn(turn);
   assert.deepEqual(current.estadosPermitidos.toSorted((a,b)=>a-b), allowed[source].map(n=>byName[n]).toSorted((a,b)=>a-b));
   // Incluye misma asignación y las transiciones inválidas de ambos estados iniciales.
-  for (const invalid of names.filter(n => !allowed[source].includes(n))) await blocked(turn, invalid);
+  for (const invalid of names.filter(n => !allowed[source].includes(n))) {
+    const message = await blocked(turn, invalid);
+    if (source === 'Pendiente' && invalid === 'Ausente') assert.match(message, /Pendiente directamente a Ausente.*Confirmado/);
+  }
   await valid(turn, target);
   if (target === 'Confirmado') {
     await blocked(turn, 'Pendiente');
@@ -113,7 +116,7 @@ for (const [index, [source, target]] of [
 
 const upcoming = await create(futureDate, futureSlots[0]);
 assert.deepEqual(upcoming.estadosPermitidos.toSorted((a,b)=>a-b), ['Confirmado','Cancelado'].map(n=>byName[n]).toSorted((a,b)=>a-b));
-assert.match(await blocked(upcoming, 'Ausente'), /todavía no ocurrió/);
+assert.match(await blocked(upcoming, 'Ausente'), /Pendiente directamente a Ausente.*Confirmado/);
 const beforeConcurrent = await history(upcoming);
 const responses = await Promise.all([0,1].map(() => fetch(origin.replace(/\/+$/,'')+'/api/historialestadoturno', {
   method:'POST', headers:{'Content-Type':'application/json'},
