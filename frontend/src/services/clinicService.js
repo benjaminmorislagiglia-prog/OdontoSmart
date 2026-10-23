@@ -3,7 +3,7 @@ const paths = {
  turnos: '/api/Turnos', odontologos: '/api/Odontologos', especialidades: '/api/especialidades',
  consultorios: '/api/consultorios', historias: '/api/HistorialClinico', estados: '/api/estadosturno',
  historialEstados: '/api/historialestadoturno', asociaciones: '/api/odontologoespecialidades',
- direcciones: '/api/direcciones', localidades: '/api/localidades', empleados: '/api/Empleados', puestos: '/api/puestos',
+ direcciones: '/api/direcciones', localidades: '/api/localidades', provincias: '/api/provincias', empleados: '/api/Empleados', puestos: '/api/puestos',
  obrasSociales: '/api/obrasociales', pacientes: '/api/Pacientes'
 };
 export function resourceService(resource) {

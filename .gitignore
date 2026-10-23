@@ -8,6 +8,7 @@
 **/.expo/
 **/TestResults/
 **/coverage/
+**/App_Data/profile-photos/
 **/.env
 **/.env.*
 !**/.env.example
