@@ -25,21 +25,20 @@ function businessDay(offset) {
   return dateKey(date);
 }
 const patients = [
-  ['Lucía','Fernández',24],['Martín','Quiroga',36],['Valentina','Sosa',22],['Diego','Molina',42],
-  ['Camila','Roldán',31],['Ricardo','Funes',58],['Sofía','Benítez',27],['Gabriel','Peralta',45],
-  ['Julieta','Acosta',26],['Nicolás','Vega',39],['Florencia','Navarro',33],['Elena','Castro',61],
-  ['Agustín','Ponce',29],['Carolina','Suárez',48],['Tomás','Medina',25],['Verónica','Ledesma',52],
-  ['Matías','Cabrera',35],['Oscar','Villalba',64],['Paula','Herrera',30],['Federico','Salinas',44],
+  ['Ana','Bustos',28],['Bruno','Correa',37],['Catalina','Duarte',23],['Esteban','Luna',46],
+  ['Inés','Montes',34],['Joaquín','Arias',41],['Malena','Robles',26],['Pedro','Giménez',53],
+  ['Renata','Salcedo',32],['Simón','Varela',60],
 ];
 const dentists = [
-  ['Mariana','Ríos','Odontología general'],['Santiago','Ferreyra','Endodoncia'],
-  ['Emilia','Torres','Ortodoncia'],['Andrés','Ibarra','Periodoncia'],
-  ['Daniela','Paz','Cirugía bucal'],['Leandro','Campos','Rehabilitación oral'],
+  ['Clara','Aguilar','Odontología general'],['Ignacio','Domínguez','Endodoncia'],
+  ['Victoria','Escudero','Ortodoncia'],['Ramiro','Godoy','Periodoncia'],
+  ['Natalia','López','Cirugía bucal'],['Sebastián','Miranda','Rehabilitación oral'],
 ];
-const rooms = ['Consultorio Central','Consultorio Sur','Consultorio Norte'];
+const rooms = ['Consultorio 1','Consultorio 2','Consultorio 3'];
+const coverage = ['Cobertura Dental Norte (ficticia)','Salud Integral Centro (ficticia)','Plan Odontológico Sur (ficticio)'];
 const streets = ['Los Tilos','Av. del Parque','Los Aromos','Pasaje del Sol','Los Ceibos','Las Acacias','Los Álamos','Av. Las Flores','Los Olivos','Pasaje del Molino'];
 const cases = [
-  ['Lesión cariosa en pieza 16','Restauración con resina de pieza 16','Restauración finalizada; control de evolución programado.'],
+  ['Lesión cariosa en pieza 16','Restauración con resina de pieza 16','Restauración finalizada; se recomienda un control de evolución.'],
   ['Patología pulpar en pieza 36','Tratamiento endodóntico de pieza 36','Procedimiento finalizado; se registra control posterior.'],
   ['Apiñamiento dental anterior','Control y ajuste de aparatología ortodóntica','Seguimiento de la alineación dental.'],
   ['Gingivitis asociada a placa','Profilaxis y limpieza periodontal','Se registran recomendaciones de higiene y control.'],
@@ -54,25 +53,41 @@ const dni = age => {
   usedDni.add(result);
   return result;
 };
-const phone = () => '0351-000-' + randomInt(1000,10000);
+const usedPhones = new Set();
+const phone = () => {
+  let result;
+  do result = '0351-000-' + randomInt(1000,10000); while (usedPhones.has(result));
+  usedPhones.add(result);
+  return result;
+};
 const sqlString = value => value == null ? 'NULL' : "N'" + String(value).replaceAll("'", "''") + "'";
-const appointments = [];
-function addDay(date, kind, patientOffset = 0) {
-  dentists.forEach((_, doctor) => {
-    const hour = (kind === 'cancelled' ? 11 : 9) + (doctor >= 3 ? 2 : 0);
-    const time = String(hour).padStart(2,'0') + ':00:00';
-    const attended = kind === 'past' || (kind === 'today' && localHour >= hour+1);
-    appointments.push({date,time,doctor,room:doctor%3,patient:(patientOffset+doctor)%patients.length,
-      state:attended?'Atendido':kind==='cancelled'?'Cancelado':doctor%2?'Confirmado':'Pendiente',
-      clinical:attended,followUp:kind==='today'});
-  });
-}
-[-8,-5,-2].forEach((offset,index) => addDay(businessDay(offset),'past',index*6));
-addDay(businessDay(-1),'cancelled',18);
-if (![0,6].includes(baseDay.getUTCDay())) addDay(today,'today');
-[1,3].forEach((offset,index) => addDay(businessDay(offset),'future',index*6));
+const weekday = ![0,6].includes(baseDay.getUTCDay());
+// Antes del mediodía las atenciones se ubican en el último día hábil.
+// Desde las 14:00 las reservas nuevas pasan al próximo día hábil.
+const completedDate = weekday && localHour >= 12 ? today : businessDay(-1);
+const futureDate = weekday && localHour < 14 ? today : businessDay(1);
+const appointments = [
+  {date:completedDate,time:'09:00:00',doctor:0,room:0,patient:0,state:'Atendido',clinical:true},
+  {date:completedDate,time:'09:30:00',doctor:1,room:1,patient:1,state:'Atendido',clinical:true},
+  {date:completedDate,time:'10:00:00',doctor:2,room:2,patient:2,state:'Ausente'},
+  {date:completedDate,time:'10:30:00',doctor:3,room:0,patient:3,state:'Cancelado'},
+  {date:futureDate,time:'14:00:00',doctor:4,room:0,patient:4,state:'Pendiente'},
+  {date:futureDate,time:'14:30:00',doctor:5,room:1,patient:5,state:'Confirmado'},
+  {date:futureDate,time:'15:00:00',doctor:0,room:2,patient:6,state:'Pendiente'},
+  {date:futureDate,time:'15:30:00',doctor:1,room:0,patient:7,state:'Confirmado'},
+];
 const histories = appointments.filter(a=>a.clinical).length;
-const plan = {fechaReferencia:today,pacientes:patients.length,odontologos:dentists.length,especialidades:dentists.length,consultorios:rooms.length,turnos:appointments.length,historiasClinicas:histories};
+const plan = {fechaReferencia:today,pacientesActivos:patients.length,empleados:dentists.length,odontologos:dentists.length,especialidades:dentists.length,consultorios:rooms.length,turnos:appointments.length,estados:Object.fromEntries(['Pendiente','Confirmado','Atendido','Cancelado','Ausente'].map(state=>[state,appointments.filter(a=>a.state===state).length])),historiasClinicas:histories};
+assert.equal(appointments.length,8);
+assert.equal(new Set(appointments.map(a=>a.doctor)).size,dentists.length);
+for (const a of appointments) {
+  assert.ok(patients[a.patient] && dentists[a.doctor] && rooms[a.room]);
+  const scheduled = new Date(`${a.date}T${a.time}-03:00`);
+  assert.ok(![0,6].includes(scheduled.getUTCDay()),'Turno fuera de un día hábil');
+  assert.ok(a.time >= '09:00:00' && a.time <= '16:00:00','Turno fuera del horario de atención');
+  assert.ok(['Pendiente','Confirmado'].includes(a.state) ? scheduled > now : scheduled < now,'Fecha incompatible con el estado');
+  if(a.clinical) assert.ok(scheduled.getTime()+45*60*1000 < now.getTime(),'Atención todavía no finalizada');
+}
 for (const key of ['doctor','room','patient']) {
   const slots = appointments.filter(a=>a.state!=='Cancelado').map(a=>[a.date,a.time,a[key]].join('|'));
   assert.equal(new Set(slots).size,slots.length,'Doble reserva de '+key);
@@ -83,15 +98,13 @@ if (!args.includes('--replace')) {
   process.exit(0);
 }
 function sql(query) {
-  return execFileSync('sqlcmd',['-S',server,'-E','-d',database,'-b','-r','1','-h','-1','-W','-Q',query],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
+  return execFileSync('sqlcmd',['-S',server,'-E','-C','-d',database,'-b','-r','1','-h','-1','-W','-Q',query],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 }
 // Antes de tocar datos: validar destino, esquema, dependencias y estados requeridos.
 sql(`SET NOCOUNT ON;
 IF DB_NAME() <> N'OdontoSmartDB' THROW 51000, 'Base de desarrollo inesperada.', 1;
 IF COL_LENGTH('dbo.HistorialClinico','Anulado') IS NULL THROW 51000, 'Falta la actualización de Historia Clínica.', 1;
-IF EXISTS(SELECT 1 FROM dbo.TurnoInsumo) OR EXISTS(SELECT 1 FROM dbo.PrestacionTurno) OR EXISTS(SELECT 1 FROM dbo.Equipamiento)
-    THROW 51000, 'Hay relaciones fuera del alcance: revisar antes de reemplazar.', 1;
-IF (SELECT COUNT(*) FROM dbo.EstadoTurno WHERE Nombre IN ('Pendiente','Confirmado','Atendido','Cancelado')) <> 4
+IF (SELECT COUNT(*) FROM dbo.EstadoTurno WHERE Nombre IN ('Pendiente','Confirmado','Atendido','Cancelado','Ausente')) <> 5
     THROW 51000, 'El catálogo de estados no coincide; no se modificará.', 1;`);
 const backupDir = sql("SET NOCOUNT ON; SELECT CAST(SERVERPROPERTY('InstanceDefaultBackupPath') AS nvarchar(4000));");
 if (!path.win32.isAbsolute(backupDir)) throw Error('No se pudo determinar una carpeta de respaldo válida.');
@@ -106,15 +119,15 @@ BEGIN TRANSACTION;
 DECLARE @LockResult int;
 EXEC @LockResult=sys.sp_getapplock @Resource=N'OdontoSmart:Agenda',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;
 IF @LockResult<0 THROW 51000, 'La agenda está ocupada; no se aplicó el reemplazo.', 1;
-IF EXISTS(SELECT 1 FROM dbo.TurnoInsumo) OR EXISTS(SELECT 1 FROM dbo.PrestacionTurno) OR EXISTS(SELECT 1 FROM dbo.Equipamiento)
-    THROW 51000, 'Aparecieron relaciones fuera del alcance; cancelar.', 1;
 DECLARE @Estados TABLE(IdEstadoTurno int,Nombre varchar(50));
 INSERT @Estados SELECT IdEstadoTurno,Nombre FROM dbo.EstadoTurno;
 -- Reemplazo de datos ficticios expresamente solicitado. No es una operación de la aplicación.
+DELETE dbo.TurnoInsumo; DELETE dbo.PrestacionTurno; DELETE dbo.ObraSocialPrestacion; DELETE dbo.Equipamiento;
 DELETE dbo.HistorialClinico; DELETE dbo.HistorialEstadoTurno; DELETE dbo.Turno;
 DELETE dbo.OdontologoEspecialidad; DELETE dbo.Odontologo; DELETE dbo.Paciente;
 DELETE dbo.Empleado; DELETE dbo.Consultorio; DELETE dbo.Especialidad;
 DELETE dbo.Direccion; DELETE dbo.Localidad; DELETE dbo.Provincia; DELETE dbo.Puesto;
+DELETE dbo.Insumo; DELETE dbo.Prestacion; DELETE dbo.ObraSocial;
 DECLARE @Provincia int,@Localidad int,@Puesto int;
 INSERT dbo.Provincia(Nombre,Pais) VALUES(N'Córdoba',N'Argentina'); SET @Provincia=SCOPE_IDENTITY();
 INSERT dbo.Localidad(Nombre,IdProvincia) VALUES(N'Córdoba Capital',@Provincia); SET @Localidad=SCOPE_IDENTITY();
@@ -124,7 +137,9 @@ DECLARE @Pacientes TABLE(NumeroDemo int PRIMARY KEY,Id int);
 DECLARE @Doctores TABLE(NumeroDemo int PRIMARY KEY,Id int);
 DECLARE @Especialidades TABLE(NumeroDemo int PRIMARY KEY,Id int);
 DECLARE @Consultorios TABLE(NumeroDemo int PRIMARY KEY,Id int);
+DECLARE @Coberturas TABLE(NumeroDemo int PRIMARY KEY,Id int);
 DECLARE @Empleado int,@Turno int;`];
+coverage.forEach((name,i)=>statements.push(`INSERT dbo.ObraSocial(Nombre) VALUES(${sqlString(name)}); INSERT @Coberturas VALUES(${i},SCOPE_IDENTITY());`));
 for(let i=0;i<rooms.length+patients.length+dentists.length;i++) {
   statements.push(`INSERT dbo.Direccion(Calle,Numero,Barrio,CP,IdLocalidad) VALUES(${sqlString(streets[i%streets.length])},${randomInt(100,2900)},${sqlString(['Centro','Jardín','Alta Córdoba'][i%3])},N'5000',@Localidad);
 INSERT @Direcciones VALUES(${i},SCOPE_IDENTITY());`);
@@ -133,7 +148,7 @@ rooms.forEach((name,i)=>statements.push(`INSERT dbo.Consultorio(Nombre,IdDirecci
 patients.forEach(([name,last,age],i)=>{
   const birth=`${baseDay.getUTCFullYear()-age}-${String(randomInt(1,10)).padStart(2,'0')}-${String(randomInt(1,29)).padStart(2,'0')}`;
   statements.push(`INSERT dbo.Paciente(DNI,Nombre,Apellido,Telefono,Correo,FechaNacimiento,Activo,IdObraSocial,IdDireccion)
-VALUES(${sqlString(dni(age))},${sqlString(name)},${sqlString(last)},${sqlString(phone())},${sqlString('paciente'+(i+1)+'@example.com')},${sqlString(birth)},1,NULL,(SELECT Id FROM @Direcciones WHERE NumeroDemo=${rooms.length+i}));
+VALUES(${sqlString(dni(age))},${sqlString(name)},${sqlString(last)},${sqlString(phone())},${sqlString('paciente'+(i+1)+'@example.com')},${sqlString(birth)},1,${i%4===3?'NULL':`(SELECT Id FROM @Coberturas WHERE NumeroDemo=${i%3})`},(SELECT Id FROM @Direcciones WHERE NumeroDemo=${rooms.length+i}));
 INSERT @Pacientes VALUES(${i},SCOPE_IDENTITY());`);
 });
 dentists.forEach(([name,last,specialty],i)=>{
@@ -147,19 +162,19 @@ INSERT dbo.OdontologoEspecialidad(IdEspecialidad,IdOdontologo) VALUES((SELECT Id
 });
 appointments.forEach(a=>{
   const scheduled=a.date+'T'+a.time;
-  const created=businessDay(-12)+'T08:00:00';
+  const created=businessDay(-5)+'T08:00:00';
   statements.push(`INSERT dbo.Turno(Fecha,Hora,IdPaciente,IdOdontologo,IdConsultorio)
 VALUES(${sqlString(a.date)},${sqlString(a.time)},(SELECT Id FROM @Pacientes WHERE NumeroDemo=${a.patient}),(SELECT Id FROM @Doctores WHERE NumeroDemo=${a.doctor}),(SELECT Id FROM @Consultorios WHERE NumeroDemo=${a.room})); SET @Turno=SCOPE_IDENTITY();
 INSERT dbo.HistorialEstadoTurno(IdTurno,IdEstadoTurno,FechaHora) VALUES(@Turno,(SELECT IdEstadoTurno FROM @Estados WHERE Nombre='Pendiente'),${sqlString(created)});`);
   if(a.state!=='Pendiente') {
-    if(a.state==='Atendido') statements.push(`INSERT dbo.HistorialEstadoTurno(IdTurno,IdEstadoTurno,FechaHora) VALUES(@Turno,(SELECT IdEstadoTurno FROM @Estados WHERE Nombre='Confirmado'),DATEADD(day,-1,CAST(${sqlString(scheduled)} AS datetime)));`);
-    const when=a.state==='Atendido'?`DATEADD(minute,45,CAST(${sqlString(scheduled)} AS datetime))`:a.state==='Cancelado'?`DATEADD(day,-1,CAST(${sqlString(scheduled)} AS datetime))`:`CAST(${sqlString(today+'T08:00:00')} AS datetime)`;
+    if(['Atendido','Ausente'].includes(a.state)) statements.push(`INSERT dbo.HistorialEstadoTurno(IdTurno,IdEstadoTurno,FechaHora) VALUES(@Turno,(SELECT IdEstadoTurno FROM @Estados WHERE Nombre='Confirmado'),DATEADD(day,-1,CAST(${sqlString(scheduled)} AS datetime)));`);
+    const when=a.state==='Atendido'?`DATEADD(minute,45,CAST(${sqlString(scheduled)} AS datetime))`:a.state==='Ausente'?`DATEADD(minute,20,CAST(${sqlString(scheduled)} AS datetime))`:a.state==='Cancelado'?`DATEADD(day,-1,CAST(${sqlString(scheduled)} AS datetime))`:`CAST(${sqlString(businessDay(-1)+'T08:00:00')} AS datetime)`;
     statements.push(`INSERT dbo.HistorialEstadoTurno(IdTurno,IdEstadoTurno,FechaHora) VALUES(@Turno,(SELECT IdEstadoTurno FROM @Estados WHERE Nombre=${sqlString(a.state)}),${when});`);
   }
   if(a.clinical){
     const [diagnosis,treatment,notes]=cases[a.doctor];
     statements.push(`INSERT dbo.HistorialClinico(IdPaciente,IdTurno,Diagnostico,TratamientosRealizados,Observaciones,Anulado)
-VALUES((SELECT Id FROM @Pacientes WHERE NumeroDemo=${a.patient}),@Turno,${sqlString(a.followUp?'Control de evolución: '+diagnosis.toLowerCase():diagnosis)},${sqlString(a.followUp?'Evaluación de evolución del tratamiento previo':treatment)},${sqlString(notes)},0);`);
+VALUES((SELECT Id FROM @Pacientes WHERE NumeroDemo=${a.patient}),@Turno,${sqlString(diagnosis)},${sqlString(treatment)},${sqlString(notes)},0);`);
   }
 });
 statements.push(`
@@ -169,11 +184,30 @@ IF EXISTS(SELECT IdEstadoTurno,Nombre FROM @Estados EXCEPT SELECT IdEstadoTurno,
 IF EXISTS(SELECT 1 FROM dbo.HistorialClinico h JOIN dbo.Turno t ON t.IdTurno=h.IdTurno WHERE h.IdPaciente<>t.IdPaciente)
  THROW 51000, 'Historia clínica asociada a paciente incorrecto.', 1;
 IF (SELECT COUNT(*) FROM dbo.Paciente)<>${patients.length} OR (SELECT COUNT(*) FROM dbo.Turno)<>${appointments.length}
- OR (SELECT COUNT(*) FROM dbo.HistorialClinico)<>${histories} THROW 51000, 'Conteos inesperados; se revierte toda la carga.', 1;
+ OR (SELECT COUNT(*) FROM dbo.HistorialClinico)<>${histories}
+ OR (SELECT COUNT(*) FROM dbo.Odontologo WHERE Activo=1)<>${dentists.length}
+ OR (SELECT COUNT(*) FROM dbo.Empleado WHERE Activo=1)<>${dentists.length}
+ OR (SELECT COUNT(*) FROM dbo.Paciente WHERE Activo=1)<>${patients.length}
+ THROW 51000, 'Conteos inesperados; se revierte toda la carga.', 1;
+IF EXISTS(SELECT 1 FROM (
+ SELECT e.Nombre,LAG(e.Nombre) OVER(PARTITION BY h.IdTurno ORDER BY h.FechaHora,h.IdHistorialEstadoTurno) AS Anterior
+ FROM dbo.HistorialEstadoTurno h JOIN dbo.EstadoTurno e ON e.IdEstadoTurno=h.IdEstadoTurno
+) cambios WHERE (Anterior IS NULL AND Nombre<>'Pendiente') OR (Anterior IS NOT NULL AND NOT
+ ((Anterior='Pendiente' AND Nombre IN ('Confirmado','Cancelado')) OR (Anterior='Confirmado' AND Nombre IN ('Atendido','Cancelado','Ausente')))))
+ THROW 51000, 'Transición de estado inválida; se revierte la carga.', 1;
+IF EXISTS(SELECT 1 FROM dbo.HistorialEstadoTurno WHERE FechaHora>CAST(SYSUTCDATETIME() AT TIME ZONE 'UTC' AT TIME ZONE 'Argentina Standard Time' AS datetime2))
+ THROW 51000, 'Historial con fecha futura; se revierte la carga.', 1;
+DECLARE @Conteos TABLE(Nombre varchar(50),Cantidad int);
+INSERT @Conteos SELECT e.Nombre,COUNT(*) FROM dbo.Turno t
+CROSS APPLY(SELECT TOP(1) h.IdEstadoTurno FROM dbo.HistorialEstadoTurno h WHERE h.IdTurno=t.IdTurno ORDER BY h.FechaHora DESC,h.IdHistorialEstadoTurno DESC) actual
+JOIN dbo.EstadoTurno e ON e.IdEstadoTurno=actual.IdEstadoTurno GROUP BY e.Nombre;
+IF EXISTS(SELECT Nombre,Cantidad FROM @Conteos EXCEPT SELECT Nombre,Cantidad FROM (VALUES('Pendiente',2),('Confirmado',2),('Atendido',2),('Cancelado',1),('Ausente',1)) esperados(Nombre,Cantidad))
+ OR (SELECT COUNT(*) FROM @Conteos)<>5 THROW 51000, 'Distribución de estados incorrecta; se revierte la carga.', 1;
 COMMIT TRANSACTION;
 SELECT 'Pacientes',COUNT(*) FROM dbo.Paciente UNION ALL SELECT 'Odontólogos',COUNT(*) FROM dbo.Odontologo
 UNION ALL SELECT 'Especialidades',COUNT(*) FROM dbo.Especialidad UNION ALL SELECT 'Consultorios',COUNT(*) FROM dbo.Consultorio
 UNION ALL SELECT 'Turnos',COUNT(*) FROM dbo.Turno UNION ALL SELECT 'Historias clínicas',COUNT(*) FROM dbo.HistorialClinico;
+SELECT Nombre AS Estado,Cantidad FROM @Conteos ORDER BY Nombre;
 END TRY
 BEGIN CATCH
 IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
@@ -183,7 +217,7 @@ const temp = mkdtempSync(path.join(tmpdir(),'odontosmart-seed-'));
 const file = path.join(temp,'datos.sql');
 try {
   writeFileSync(file,'\ufeff'+statements.join('\n'),'utf8');
-  const output=execFileSync('sqlcmd',['-S',server,'-E','-d',database,'-b','-f','65001','-i',file],{encoding:'utf8'});
+  const output=execFileSync('sqlcmd',['-S',server,'-E','-C','-d',database,'-b','-f','65001','-i',file],{encoding:'utf8'});
   console.log(output.trim());
 } finally { try { unlinkSync(file); rmdirSync(temp); } catch { /* Archivo temporal fuera del repositorio. */ } }
 console.log('Carga completa. Estados de turno conservados. Respaldo:',backup);
