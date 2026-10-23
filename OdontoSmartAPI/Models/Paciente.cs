@@ -16,6 +16,7 @@ public partial class Paciente
     public string? Telefono { get; set; }
 
     public string? Correo { get; set; }
+    public string? FotoUrl { get; set; }
 
     public DateOnly FechaNacimiento { get; set; }
 

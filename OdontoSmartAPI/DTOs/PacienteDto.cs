@@ -11,6 +11,7 @@ public class PacienteDto
     public string Apellido { get; set; } = string.Empty;
     public string? Telefono { get; set; }
     public string? Correo { get; set; }
+    public string? FotoUrl { get; set; }
     public DateOnly FechaNacimiento { get; set; }
     public bool? Activo { get; set; }
     public int? IdObraSocial { get; set; }

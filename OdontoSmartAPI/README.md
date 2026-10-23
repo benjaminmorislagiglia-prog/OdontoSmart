@@ -7,7 +7,7 @@ API ASP.NET Core sobre .NET 10, Entity Framework Core 10 y SQL Server. Utiliza c
 Requiere .NET SDK 10 y una instancia de SQL Server disponible.
 
 1. Para una instalación nueva, ejecutar OdontoSmart.sql de la raíz en SQL Server. No ejecutarlo sobre una base existente.
-2. Ejecutar Actualizacion Prestacion-Turno.sql, Actualizacion Estados-Turno.sql y Actualizacion Historia-Clinica.sql. Son idempotentes; el último agrega la anulación a bases existentes sin eliminar historias. El script base ya incluye las columnas de anulación para instalaciones nuevas.
+2. Ejecutar Actualizacion Prestacion-Turno.sql, Actualizacion Estados-Turno.sql, Actualizacion Historia-Clinica.sql y Actualizacion Fotos-Perfil.sql. Son idempotentes; agregan los datos/columnas pendientes sin reemplazar registros. El script base ya incluye las columnas para instalaciones nuevas.
 3. Copiar appsettings.Local.example.json a appsettings.Local.json dentro de OdontoSmartAPI y ajustar la conexión de la instancia. Este archivo no se publica. También puede usarse ConnectionStrings__DefaultConnection.
 4. Configurar Cors:AllowedOrigins con el origen exacto de Vite si difiere de localhost/127.0.0.1:5173 o :5174.
 
@@ -119,3 +119,22 @@ Verifica las seis transiciones permitidas, todas las salidas de estados finales,
 `POST /api/HistorialClinico/{id}/anular` recibe `{ "motivo": "Registro cargado por error" }`. Exige un motivo no vacío de hasta 300 caracteres y devuelve el DTO con `anulado`, `motivoAnulacion` y `fechaAnulacion` (UTC). Los GET generales, por ID y por paciente incluyen las historias anuladas.
 
 La actualización es atómica y los reintentos conservan el primer motivo y fecha. PUT devuelve 409 para registros anulados; tampoco permite cambiar paciente o turno. DELETE continúa bloqueando la eliminación física con 409. La restricción de una historia por turno se mantiene incluso después de anular; no se incorporan usuarios ni reglas de auditoría nuevas.
+
+## Fotos de perfil y enlaces de dirección
+
+Ejecutar `Actualizacion Fotos-Perfil.sql` sobre una base existente. Agrega únicamente `Paciente.FotoUrl` y `Empleado.FotoUrl` (`varchar(200) NULL`). El SQL general incluye ambas columnas en instalaciones nuevas. No se agrega foto a Odontologo.
+
+- `PUT /api/Pacientes/{id}/foto` y `PUT /api/Empleados/{id}/foto`: multipart/form-data, campo `archivo`. Devuelven el DTO actualizado. Pacientes admite el mismo registro inactivo que su edición; Empleados mantiene la edición sólo para activos.
+- `GET /api/fotos-perfil/{nombre}`: sirve únicamente nombres GUID generados por el servidor, como `image/webp`, con `nosniff`. No se publica el directorio de almacenamiento ni se aceptan rutas físicas del cliente.
+- Se aceptan JPG/JPEG, PNG y WebP de hasta 5 MB y 4096 píxeles por lado. Se comprueban extensión, MIME, firma y decodificación raster con Magick.NET 15.0.0. El procesamiento tiene límites de memoria, dimensiones, tiempo y concurrencia; no se decodifican formatos arbitrarios mediante nombres o rutas del usuario.
+- Cada imagen se orienta, reduce a un máximo de 512x512, elimina sus metadatos y vuelve a codificar como WebP. Se guarda en `App_Data/profile-photos/` con GUID y creación exclusiva. En SQL sólo queda `/api/fotos-perfil/<guid>.webp`.
+- Si falla la escritura en BD se retira el archivo nuevo; después de guardar una foto reemplazada se retira la anterior. Los cambios de datos personales por JSON preservan FotoUrl y no admiten asignarla desde el cliente.
+- La carpeta de fotos debe tener permiso de escritura y conservarse junto con la base en despliegues y copias de seguridad. Está excluida de Git. No se incluyen imágenes de personas ni archivos de prueba en el repositorio.
+
+Los formularios existentes permiten seleccionar y previsualizar una foto opcional. Si los datos se guardan pero falla la carga de imagen, lo informan y permiten reintentar sobre el mismo registro, evitando duplicar altas. Sin foto, o si no puede cargarse, se muestran iniciales. El detalle de Odontólogos consulta al Empleado asociado y usa su FotoUrl actual, sin copia ni columna propia.
+
+Paciente y Empleado muestran la dirección con Localidad y Provincia. El enlace oficial de búsqueda `https://www.google.com/maps/search/?api=1&query=...` se construye con URLSearchParams y abre otra pestaña con noopener/noreferrer. Requiere calle, número positivo, localidad y provincia; si faltan, no se ofrece el enlace. Sólo envía la dirección a Google cuando se abre; no hay clave, mapa embebido ni geocodificación.
+
+Pruebas desde frontend: `node scripts/check-profile.mjs` y `node scripts/check-pacientes.mjs` (validaciones y contrato controlado, sin modificar la BD).
+
+La prueba HTTP `scripts/check-profile-photos.mjs` requiere una API local, `--allow-write`, `ODONTOSMART_API_URL` y `ODONTOSMART_PHOTO_FIXTURES`: carpeta externa con `valid.jpg`, `valid.png`, `valid.webp` válidos menores de 5 MB/4096 píxeles y `dimensions.png` válido de 5000x1. Crea un Paciente "Prueba Foto", un Empleado "Prueba Empleado" y su Odontólogo para inspección manual. Conserva esos registros y sus fotos; al finalizar la inspección se pueden desactivar por sus endpoints normales. No ejecutar sobre datos de producción ni usar fotos privadas como fixtures.

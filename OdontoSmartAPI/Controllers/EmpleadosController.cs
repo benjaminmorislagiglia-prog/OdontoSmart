@@ -29,6 +29,7 @@ public class EmpleadosController : ControllerBase
             Telefono = e.Telefono,
             IdDireccion = e.IdDireccion,
             Correo = e.Correo,
+            FotoUrl = e.FotoUrl,
             IdPuesto = e.IdPuesto,
             Activo = e.Activo
         };
@@ -51,6 +52,7 @@ public class EmpleadosController : ControllerBase
                 Telefono = e.Telefono,
                 IdDireccion = e.IdDireccion,
                 Correo = e.Correo,
+                FotoUrl = e.FotoUrl,
                 IdPuesto = e.IdPuesto,
                 Activo = e.Activo
             })
@@ -179,6 +181,30 @@ public class EmpleadosController : ControllerBase
         return NoContent();
     }
 
+    [HttpPut("{id:int}/foto")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(OdontoSmartAPI.Services.ProfilePhotoStore.MaxRequestBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = OdontoSmartAPI.Services.ProfilePhotoStore.MaxRequestBytes)]
+    public async Task<ActionResult<EmpleadoDto>> SubirFoto(int id,
+        [FromForm] ProfilePhotoUploadDto dto,
+        [FromServices] OdontoSmartAPI.Services.ProfilePhotoStore photos,
+        CancellationToken ct)
+    {
+        var person = await _context.Empleados.FirstOrDefaultAsync(p => p.IdEmpleado == id && p.Activo == true, ct);
+        if (person == null) return NotFound("No se encontró el registro.");
+        try
+        {
+            await photos.ReplaceAsync(dto.Archivo, person.FotoUrl, async url =>
+            {
+                person.FotoUrl = url;
+                await _context.SaveChangesAsync(ct);
+            }, ct);
+            return Ok(ConvertirDto(person));
+        }
+        catch (ArgumentException ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { return StatusCode(503, "No se pudo guardar la foto. Intentá nuevamente."); }
+    }
     // Reactivación: recupera el mismo registro y todas sus relaciones.
     [HttpPost("{id:int}/reactivar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

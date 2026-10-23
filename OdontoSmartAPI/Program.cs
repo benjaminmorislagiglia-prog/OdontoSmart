@@ -20,6 +20,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // 2. Registrar los controladores de la API
 builder.Services.AddControllers();
+builder.Services.AddSingleton<OdontoSmartAPI.Services.ProfilePhotoStore>();
 
 // 3. Configurar OpenAPI
 builder.Services.AddOpenApi();

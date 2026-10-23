@@ -111,6 +111,7 @@ public partial class AppDbContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasColumnName("DNI");
+            entity.Property(e => e.FotoUrl).HasMaxLength(200).IsUnicode(false);
             entity.Property(e => e.Nombre)
                 .HasMaxLength(100)
                 .IsUnicode(false);
@@ -349,6 +350,7 @@ public partial class AppDbContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasColumnName("DNI");
+            entity.Property(e => e.FotoUrl).HasMaxLength(200).IsUnicode(false);
             entity.Property(e => e.Nombre)
                 .HasMaxLength(100)
                 .IsUnicode(false);

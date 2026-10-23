@@ -18,6 +18,7 @@ public partial class Empleado
     public int? IdDireccion { get; set; }
 
     public string? Correo { get; set; }
+    public string? FotoUrl { get; set; }
 
     public int IdPuesto { get; set; }
 

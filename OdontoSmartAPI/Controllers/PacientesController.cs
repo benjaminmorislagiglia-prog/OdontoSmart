@@ -28,6 +28,7 @@ public class PacientesController : ControllerBase
             Apellido = p.Apellido,
             Telefono = p.Telefono,
             Correo = p.Correo,
+            FotoUrl = p.FotoUrl,
             FechaNacimiento = p.FechaNacimiento,
             Activo = p.Activo,
             IdObraSocial = p.IdObraSocial,
@@ -51,6 +52,7 @@ public class PacientesController : ControllerBase
                 Apellido = p.Apellido,
                 Telefono = p.Telefono,
                 Correo = p.Correo,
+                FotoUrl = p.FotoUrl,
                 FechaNacimiento = p.FechaNacimiento,
                 Activo = p.Activo,
                 IdObraSocial = p.IdObraSocial,
@@ -196,6 +198,30 @@ public class PacientesController : ControllerBase
         return NoContent();
     }
 
+    [HttpPut("{id:int}/foto")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(OdontoSmartAPI.Services.ProfilePhotoStore.MaxRequestBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = OdontoSmartAPI.Services.ProfilePhotoStore.MaxRequestBytes)]
+    public async Task<ActionResult<PacienteDto>> SubirFoto(int id,
+        [FromForm] ProfilePhotoUploadDto dto,
+        [FromServices] OdontoSmartAPI.Services.ProfilePhotoStore photos,
+        CancellationToken ct)
+    {
+        var person = await _context.Pacientes.FirstOrDefaultAsync(p => p.IdPaciente == id, ct);
+        if (person == null) return NotFound("No se encontró el registro.");
+        try
+        {
+            await photos.ReplaceAsync(dto.Archivo, person.FotoUrl, async url =>
+            {
+                person.FotoUrl = url;
+                await _context.SaveChangesAsync(ct);
+            }, ct);
+            return Ok(ConvertirDto(person));
+        }
+        catch (ArgumentException ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { return StatusCode(503, "No se pudo guardar la foto. Intentá nuevamente."); }
+    }
     // Reactivación: recupera el mismo registro y todas sus relaciones.
     [HttpPost("{id:int}/reactivar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
