@@ -113,7 +113,7 @@ try {
   assert.equal((await request('Odontologos/'+doctor.idOdontologo)).activo,true);
   assert.ok((await request('odontologoespecialidades/odontologo/'+doctor.idOdontologo)).some(a=>a.idOdontologoEspecialidad===association.idOdontologoEspecialidad));
   const expected=[];
-  for(const name of ['Pendiente','Confirmado','Ausente','Atendido','Cancelado']) {
+  for(const name of ['Pendiente','Confirmado','Cancelado']) {
     const state=states.find(s=>s.nombre===name);assert.ok(state,'Falta '+name);
     expected.push(state.idEstadoTurno);
     if(name!=='Pendiente')await request('historialestadoturno','POST',{idTurno:turn.idTurno,idEstadoTurno:state.idEstadoTurno},201);
@@ -121,6 +121,12 @@ try {
   }
   const history=await request('historialestadoturno/turno/'+turn.idTurno);
   assert.deepEqual(history.map(h=>h.idEstadoTurno),expected);
+  // Los otros estados existen, pero un turno cancelado no puede pasar a ellos.
+  for(const name of ['Ausente','Atendido']) {
+    const state=states.find(s=>s.nombre===name);assert.ok(state,'Falta '+name);
+    await request('historialestadoturno','POST',{idTurno:turn.idTurno,idEstadoTurno:state.idEstadoTurno},409);
+  }
+  assert.deepEqual(await request('historialestadoturno/turno/'+turn.idTurno),history);
   assert.ok(history.every(h=>Number.isFinite(Date.parse(h.fechaHora))));
   assert.deepEqual(await request('estadosturno'),states);
   for(const [route,items] of Object.entries(originals)) {

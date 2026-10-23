@@ -23,14 +23,31 @@ public class TurnosController(AppDbContext context) : ControllerBase
             .Select(h => h.IdEstadoTurnoNavigation.Nombre).FirstOrDefault()
     });
 
+    private async Task AgregarEstadosPermitidos(IEnumerable<TurnoDto> turnos)
+    {
+        var estados = await context.EstadoTurnos.AsNoTracking().ToListAsync();
+        var ahora = DateTime.Now;
+        foreach (var turno in turnos)
+            turno.EstadosPermitidos = estados
+                .Where(e => TurnoEstadoRules.Validar(turno.Estado, e.Nombre, turno.Fecha, turno.Hora, ahora) == null)
+                .Select(e => e.IdEstadoTurno).ToArray();
+    }
+
     [HttpGet]
-    public async Task<IActionResult> GetTurnos() => Ok(await Query().OrderBy(t => t.Fecha).ThenBy(t => t.Hora).ToListAsync());
+    public async Task<IActionResult> GetTurnos()
+    {
+        var turnos = await Query().OrderBy(t => t.Fecha).ThenBy(t => t.Hora).ToListAsync();
+        await AgregarEstadosPermitidos(turnos);
+        return Ok(turnos);
+    }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetTurnoPorId(int id)
     {
         var turno = await Query().FirstOrDefaultAsync(t => t.IdTurno == id);
-        return turno == null ? NotFound("No se encontró el turno.") : Ok(turno);
+        if (turno == null) return NotFound("No se encontró el turno.");
+        await AgregarEstadosPermitidos([turno]);
+        return Ok(turno);
     }
 
     private async Task<IActionResult?> Validar(TurnoGuardarDto dto, int exclude = 0, bool checkAvailability = true)
@@ -71,8 +88,9 @@ public class TurnosController(AppDbContext context) : ControllerBase
         context.Turnos.Add(turno);
         await context.SaveChangesAsync();
         await transaction.CommitAsync();
-        return CreatedAtAction(nameof(GetTurnoPorId), new { id = turno.IdTurno },
-            await Query().FirstAsync(t => t.IdTurno == turno.IdTurno));
+        var creado = await Query().FirstAsync(t => t.IdTurno == turno.IdTurno);
+        await AgregarEstadosPermitidos([creado]);
+        return CreatedAtAction(nameof(GetTurnoPorId), new { id = turno.IdTurno }, creado);
     }
 
     [HttpPut("{id:int}")]
@@ -104,8 +122,11 @@ public class TurnosController(AppDbContext context) : ControllerBase
         if (current == "Cancelado") return NoContent();
         var cancelled = await context.EstadoTurnos.FirstOrDefaultAsync(e => e.Nombre == "Cancelado");
         if (cancelled == null) return Conflict("Falta configurar el estado Cancelado en el catálogo de estados.");
+        var ahora = DateTime.Now;
+        var error = TurnoEstadoRules.Validar(current, cancelled.Nombre, turno.Fecha, turno.Hora, ahora);
+        if (error != null) return Conflict(error);
         context.HistorialEstadoTurnos.Add(new HistorialEstadoTurno
-        { IdTurno = id, IdEstadoTurno = cancelled.IdEstadoTurno, FechaHora = DateTime.Now });
+        { IdTurno = id, IdEstadoTurno = cancelled.IdEstadoTurno, FechaHora = ahora });
         await context.SaveChangesAsync();
         await transaction.CommitAsync();
         return NoContent();

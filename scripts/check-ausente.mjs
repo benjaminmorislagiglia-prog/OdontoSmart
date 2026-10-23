@@ -39,7 +39,7 @@ const date = day.toISOString().slice(0, 10);
 const slots = Array.from({length: 8}, (_, index) => `${13 + Math.floor(index / 2)}:${index % 2 ? '30' : '00'}:00`)
   .filter(time => !originalTurns.some(t => t.fecha === date && t.hora === time && t.estado !== 'Cancelado' &&
     (t.idOdontologo === dentists[0].idOdontologo || t.idConsultorio === rooms[0].idConsultorio || t.idPaciente === patients[0].idPaciente)));
-assert.ok(slots.length >= 2, 'No hay dos horarios libres en la tarde del día de prueba.');
+assert.ok(slots.length >= 3, 'No hay tres horarios libres en la tarde del día de prueba.');
 const payload = time => ({fecha: date, hora: time, idPaciente: patients[0].idPaciente,
   idOdontologo: dentists[0].idOdontologo, idConsultorio: rooms[0].idConsultorio});
 const change = (turn, status) => request('historialestadoturno', 'POST', {idTurno: turn.idTurno, idEstadoTurno: status.idEstadoTurno}, 201);
@@ -68,10 +68,11 @@ const other = await request('Turnos', 'POST', payload(slots[1]), 201);
 await change(other, confirmed);
 await change(other, attended);
 assert.equal((await request('Turnos/' + other.idTurno)).estado, 'Atendido');
-await request('Turnos/' + other.idTurno, 'DELETE', undefined, 204);
-assert.equal((await request('Turnos/' + other.idTurno)).estado, 'Cancelado');
-assert.deepEqual((await history(other)).map(h => h.idEstadoTurno), [pending.idEstadoTurno, confirmed.idEstadoTurno, attended.idEstadoTurno, cancelled.idEstadoTurno]);
-const replacement = await request('Turnos', 'POST', payload(slots[1]), 201);
+await request('Turnos/' + other.idTurno, 'DELETE', undefined, 409);
+assert.equal((await request('Turnos/' + other.idTurno)).estado, 'Atendido');
+assert.deepEqual((await history(other)).map(h => h.idEstadoTurno), [pending.idEstadoTurno, confirmed.idEstadoTurno, attended.idEstadoTurno]);
+await request('Turnos', 'POST', payload(slots[1]), 409);
+const replacement = await request('Turnos', 'POST', payload(slots[2]), 201);
 await request('Turnos/' + replacement.idTurno, 'DELETE', undefined, 204);
 const all = await request('Turnos');
 assert.ok(all.some(t => t.idTurno === turn.idTurno && t.estado === 'Ausente'));

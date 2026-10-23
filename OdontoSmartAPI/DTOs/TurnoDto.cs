@@ -12,4 +12,5 @@ public class TurnoDto
     public string Consultorio { get; set; } = "";
     public int? IdEstadoTurno { get; set; }
     public string? Estado { get; set; }
+    public int[] EstadosPermitidos { get; set; } = [];
 }
