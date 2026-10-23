@@ -87,7 +87,32 @@ $env:ODONTOSMART_API_URL = 'http://localhost:5122'
 node scripts/check-ausente.mjs --allow-write
 ```
 
-La prueba consulta los estados sin crearlos, verifica 24 solicitudes HTTP, crea tres turnos con catálogos existentes y conserva su historial: uno queda Ausente y los otros dos Cancelado. No reemplaza los datos de demostración ni ejecuta el generador de datos.
+La prueba consulta los estados sin crearlos y crea tres turnos con catálogos existentes: uno queda Ausente, otro Atendido y otro Cancelado. Comprueba que no puede cancelarse el turno Atendido. No reemplaza los datos de demostración ni ejecuta el generador de datos.
+
+## Transiciones de estados de turno
+
+La validación compartida está en `Data/TurnoEstadoRules.cs` y se aplica tanto al POST del historial como al DELETE de Turnos (cancelación lógica). No se modifican tablas ni mapeos EF.
+
+| Estado actual | Destinos permitidos |
+| --- | --- |
+| Pendiente | Confirmado, Cancelado, Ausente |
+| Confirmado | Atendido, Cancelado, Ausente |
+| Atendido, Cancelado, Ausente | Ninguno: son finales |
+
+Ausente sólo se permite cuando ya llegó la fecha/hora del turno. Se comparan `Fecha` y `Hora` con la hora local del servidor, igual que el historial existente (`DateTime.Now`); la instalación local usa Argentina (UTC−03:00). Al alojar la API en otro servidor debe conservarse la zona horaria de la clínica. Los turnos no llevan offset y no se convierten a UTC.
+
+Los cambios inválidos y los POST que repiten el estado actual devuelven HTTP 409 con un mensaje, sin escribir. Repetir DELETE sobre un turno Cancelado sigue devolviendo 204 sin duplicar historial. Cada transición válida agrega un registro con su fecha/hora, conservando el turno y el historial anterior. El bloqueo transaccional de agenda también evita duplicados por solicitudes simultáneas.
+
+Los DTO de Turnos incluyen `estadosPermitidos` con IDs del catálogo real, calculados por la API. Agenda usa esos IDs para su selector y para habilitar Cancelar turno. Se actualizan al consultar el listado o abrir el detalle; al llegar la hora de un turno futuro debe reabrirse el detalle para obtener Ausente. La API vuelve a validar siempre al guardar.
+
+Prueba específica (siete turnos nuevos sobre catálogos activos existentes; no cambia registros previos y conserva los historiales de prueba):
+
+```powershell
+$env:ODONTOSMART_API_URL = 'http://localhost:5122'
+node scripts/check-status-transitions.mjs --allow-write
+```
+
+Verifica las seis transiciones permitidas, todas las salidas de estados finales, repeticiones, Ausente futuro, cancelación por DELETE, concurrencia y persistencia por GET. `check-api.mjs`, `check-management.mjs` y `check-ausente.mjs` también respetan los estados finales.
 
 ## Anulación de historia clínica
 

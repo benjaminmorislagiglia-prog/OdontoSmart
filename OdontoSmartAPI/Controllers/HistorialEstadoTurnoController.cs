@@ -105,21 +105,20 @@ public class HistorialEstadoTurnoController : ControllerBase
     {
         // Validar existencia del turno
         await using var transaction = await AgendaRules.LockAsync(_context);
-        var turnoExiste = await _context.Set<Turno>()
-            .AnyAsync(t => t.IdTurno == dto.IdTurno);
+        var turno = await _context.Turnos.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.IdTurno == dto.IdTurno);
 
-        if (!turnoExiste)
+        if (turno == null)
         {
             return BadRequest(
                 "El turno indicado no existe.");
         }
 
         // Validar existencia del estado
-        var estadoExiste = await _context.Set<EstadoTurno>()
-            .AnyAsync(e =>
-                e.IdEstadoTurno == dto.IdEstadoTurno);
+        var estado = await _context.EstadoTurnos.AsNoTracking()
+            .FirstOrDefaultAsync(e => e.IdEstadoTurno == dto.IdEstadoTurno);
 
-        if (!estadoExiste)
+        if (estado == null)
         {
             return BadRequest(
                 "El estado de turno indicado no existe.");
@@ -132,21 +131,15 @@ public class HistorialEstadoTurnoController : ControllerBase
             .Where(h => h.IdTurno == dto.IdTurno)
             .OrderByDescending(h => h.FechaHora)
             .ThenByDescending(h => h.IdHistorialEstadoTurno)
-            .Select(h => (int?)h.IdEstadoTurno)
+            .Select(h => h.IdEstadoTurnoNavigation.Nombre)
             .FirstOrDefaultAsync();
 
-        // Evitar registrar dos veces seguidas el mismo estado
-        if (ultimoEstado == dto.IdEstadoTurno)
-        {
-            return Conflict(
-                "El turno ya tiene ese estado como último estado registrado.");
-        }
+        var ahora = DateTime.Now;
+        var transitionError = TurnoEstadoRules.Validar(ultimoEstado, estado.Nombre, turno.Fecha, turno.Hora, ahora);
+        if (transitionError != null) return Conflict(transitionError);
 
-        var targetName = await _context.EstadoTurnos.Where(e => e.IdEstadoTurno == dto.IdEstadoTurno)
-            .Select(e => e.Nombre).FirstAsync();
-        if (targetName != "Cancelado")
+        if (estado.Nombre != "Cancelado")
         {
-            var turno = await _context.Turnos.FirstAsync(t => t.IdTurno == dto.IdTurno);
             var error = await AgendaRules.ConflictAsync(_context, turno.Fecha, turno.Hora,
                 turno.IdOdontologo, turno.IdConsultorio, turno.IdTurno);
             if (error != null) return Conflict(error);
@@ -156,7 +149,7 @@ public class HistorialEstadoTurnoController : ControllerBase
         {
             IdTurno = dto.IdTurno,
             IdEstadoTurno = dto.IdEstadoTurno,
-            FechaHora = DateTime.Now
+            FechaHora = ahora
         };
 
         _context.Set<HistorialEstadoTurno>().Add(registro);
