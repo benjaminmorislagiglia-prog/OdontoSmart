@@ -35,7 +35,7 @@ const dentists = [
   ['Natalia','López','Cirugía bucal'],['Sebastián','Miranda','Rehabilitación oral'],
 ];
 const rooms = ['Consultorio 1','Consultorio 2','Consultorio 3'];
-const coverage = ['Cobertura Dental Norte (ficticia)','Salud Integral Centro (ficticia)','Plan Odontológico Sur (ficticio)'];
+const coverage = ['Apross','OSSOELSAC'];
 const streets = ['Los Tilos','Av. del Parque','Los Aromos','Pasaje del Sol','Los Ceibos','Las Acacias','Los Álamos','Av. Las Flores','Los Olivos','Pasaje del Molino'];
 const cases = [
   ['Lesión cariosa en pieza 16','Restauración con resina de pieza 16','Restauración finalizada; se recomienda un control de evolución.'],
@@ -148,7 +148,7 @@ rooms.forEach((name,i)=>statements.push(`INSERT dbo.Consultorio(Nombre,IdDirecci
 patients.forEach(([name,last,age],i)=>{
   const birth=`${baseDay.getUTCFullYear()-age}-${String(randomInt(1,10)).padStart(2,'0')}-${String(randomInt(1,29)).padStart(2,'0')}`;
   statements.push(`INSERT dbo.Paciente(DNI,Nombre,Apellido,Telefono,Correo,FechaNacimiento,Activo,IdObraSocial,IdDireccion)
-VALUES(${sqlString(dni(age))},${sqlString(name)},${sqlString(last)},${sqlString(phone())},${sqlString('paciente'+(i+1)+'@example.com')},${sqlString(birth)},1,${i%4===3?'NULL':`(SELECT Id FROM @Coberturas WHERE NumeroDemo=${i%3})`},(SELECT Id FROM @Direcciones WHERE NumeroDemo=${rooms.length+i}));
+VALUES(${sqlString(dni(age))},${sqlString(name)},${sqlString(last)},${sqlString(phone())},${sqlString('paciente'+(i+1)+'@example.com')},${sqlString(birth)},1,${i%4===3?'NULL':`(SELECT Id FROM @Coberturas WHERE NumeroDemo=${i%coverage.length})`},(SELECT Id FROM @Direcciones WHERE NumeroDemo=${rooms.length+i}));
 INSERT @Pacientes VALUES(${i},SCOPE_IDENTITY());`);
 });
 dentists.forEach(([name,last,specialty],i)=>{

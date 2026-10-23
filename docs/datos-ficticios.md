@@ -5,7 +5,7 @@ El generador `scripts/seed-demo-data.mjs` reemplaza los datos de prueba de la ba
 - 10 pacientes activos, con direcciones y contactos individuales.
 - 6 odontólogos activos, cada uno vinculado a un empleado activo, una matrícula y una especialidad.
 - 3 consultorios: Consultorio 1, Consultorio 2 y Consultorio 3, utilizados por la agenda sin agregar un módulo de Consultorios a la web.
-- 3 obras sociales ficticias; algunos pacientes tienen cobertura y otros no.
+- 2 obras sociales indicadas por la clínica: Apross y OSSOELSAC; algunos pacientes de ejemplo tienen cobertura y otros no. Estas asignaciones son ficticias.
 - 8 turnos: 2 Pendiente, 2 Confirmado, 2 Atendido, 1 Cancelado y 1 Ausente.
 - 2 historias clínicas, exclusivamente de los dos turnos atendidos, con el paciente y la especialidad correspondientes.
 
@@ -31,7 +31,7 @@ Reemplazo de los datos de prueba de la base local `OdontoSmartDB`, usando autent
 node scripts/seed-demo-data.mjs --replace --server ".\SQLEXPRESS"
 ```
 
-El reemplazo elimina los registros de prueba anteriores de todas las tablas del proyecto, excepto EstadoTurno, respetando las dependencias. Esto incluye los datos anteriores de pacientes, empleados, odontólogos, historias, turnos, direcciones y catálogos auxiliares. Insumos, Prestaciones y Equipamiento, junto con sus asociaciones, quedan vacíos; las obras sociales se reemplazan por las tres coberturas ficticias indicadas. Es una operación de preparación de desarrollo expresamente solicitada; no forma parte de las acciones normales de la aplicación. No debe ejecutarse sobre datos clínicos reales.
+El reemplazo elimina los registros de prueba anteriores de todas las tablas del proyecto, excepto EstadoTurno, respetando las dependencias. Esto incluye los datos anteriores de pacientes, empleados, odontólogos, historias, turnos, direcciones y catálogos auxiliares. Insumos, Prestaciones y Equipamiento, junto con sus asociaciones, quedan vacíos; las obras sociales se reemplazan por Apross y OSSOELSAC. Es una operación de preparación de desarrollo expresamente solicitada; no forma parte de las acciones normales de la aplicación. No debe ejecutarse sobre datos clínicos reales.
 
 Antes de modificar registros, crea un backup `COPY_ONLY` con checksum en la carpeta de respaldos de SQL Server y ejecuta `RESTORE VERIFYONLY`. La ruta se informa en consola; el backup no se publica en Git. Si falla el respaldo, no se realiza la carga.
 
@@ -40,3 +40,5 @@ El reemplazo se ejecuta en una transacción, manteniendo las claves foráneas ac
 El catálogo **EstadoTurno conserva exactamente sus IDs y nombres**, incluido Ausente. Se reutilizan los cinco estados requeridos desde la base, sin insertar ni reemplazar estados. No se cambia la estructura de las tablas ni Entity Framework. No se modifica código de Dashboard ni del frontend: los indicadores y listados reflejan las consultas a la API. Los archivos de fotos anteriores se conservan localmente para no impedir recuperar el respaldo y permanecen excluidos de Git.
 
 Después de cargar, refrescar la web. La carga modifica la base local; el commit en GitHub publica el generador y esta documentación, no el contenido de SQL Server.
+
+Para actualizar únicamente las obras sociales de una carga anterior, sin volver a generar pacientes ni turnos, ejecutar `Actualizacion Obras-Sociales.sql`. El script agrega las dos obras sociales si faltan y reasigna las coberturas ficticias del generador: Norte y Sur a Apross, Centro a OSSOELSAC. Conserva los pacientes sin cobertura y las demás obras sociales existentes. No configura montos ni prestaciones cubiertas.
