@@ -46,7 +46,7 @@ export default function PacientesPage() {
   <Link to={'/pacientes/'+p.idPaciente+'/editar'} className="btn btn-sm btn-outline-secondary">Modificar</Link>
   <button type="button" className={'btn btn-sm '+(inactive?'btn-outline-primary':'btn-outline-danger')} disabled={busy} onClick={()=>ask(p,inactive)} aria-label={(inactive?'Reactivar a ':'Desactivar a ')+p.nombre+' '+p.apellido}>{inactive?'Reactivar':'Desactivar'}</button>
  </>;
- return <><PageHeader eyebrow="GESTIÓN DE PACIENTES" title="Pacientes" description="Consultá y administrá la información de los pacientes."><Link className="btn btn-primary" to="/pacientes/nuevo">Registrar paciente</Link></PageHeader>
+ return <><PageHeader eyebrow="GESTIÓN DE PACIENTES" title="Pacientes"><Link className="btn btn-primary" to="/pacientes/nuevo">Registrar paciente</Link></PageHeader>
   <section className="panel mb-3"><div className="table-toolbar pt-3"><label htmlFor="pacientes-search" className="visually-hidden">Buscar pacientes</label><input id="pacientes-search" className="form-control" placeholder="Buscar por nombre, DNI, teléfono o correo…" value={query} onChange={e=>setQuery(e.target.value)}/></div></section>
   {loading?<LoadingState message="Cargando pacientes…"/>:error?<ErrorState message={error} onAction={reload}/>:<>
    <RecordListSection title="Pacientes activos" rows={filter(data.active)} idKey="idPaciente" columns={columns} actions={p=>actions(p,false)} filterKey={query} emptyMessage={query?'No hay coincidencias entre los pacientes activos.':'No hay pacientes activos.'}/>

@@ -36,5 +36,5 @@ export default function PacienteFormPage() {
    navigate('/pacientes/' + (id||savedId.current));
   } catch (e) { const message = apiErrorMessage(e); notify(message, 'error'); throw new Error(message); }
  }
- return <><PageHeader eyebrow="PACIENTES" title={editing ? 'Editar paciente' : 'Registrar paciente'} description="Completá los datos personales del paciente."><Link to="/pacientes" className="btn btn-outline-secondary">Ver pacientes</Link></PageHeader>{loading ? <LoadingState message="Cargando formulario…" /> : error ? <ErrorState message={error} onAction={reload} /> : <PacienteForm key={id || 'new'} patient={data.patient} catalogs={data.catalogs} onSave={save} cancelTo={editing ? '/pacientes/' + id : '/pacientes'} />}</>;
+ return <><PageHeader eyebrow="PACIENTES" title={editing ? 'Editar paciente' : 'Registrar paciente'}><Link to="/pacientes" className="btn btn-outline-secondary">Ver pacientes</Link></PageHeader>{loading ? <LoadingState message="Cargando formulario…" /> : error ? <ErrorState message={error} onAction={reload} /> : <PacienteForm key={id || 'new'} patient={data.patient} catalogs={data.catalogs} onSave={save} cancelTo={editing ? '/pacientes/' + id : '/pacientes'} />}</>;
 }
