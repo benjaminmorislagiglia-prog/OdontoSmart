@@ -13,6 +13,14 @@ import './styles/settings.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <ThemeProvider><PreferencesProvider><NotificationProvider><BrowserRouter><App /></BrowserRouter></NotificationProvider></PreferencesProvider></ThemeProvider>
+    <ThemeProvider>
+      <PreferencesProvider>
+        <NotificationProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </NotificationProvider>
+      </PreferencesProvider>
+    </ThemeProvider>
   </React.StrictMode>,
 );

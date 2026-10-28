@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 const SESSION_KEY = 'odontosmart.mobile-session';
-// Solo para desarrollo. No guardar la contraseña ni implementar roles.
+// Credenciales públicas, exclusivamente para el prototipo local.
 const CREDENTIALS = { username: 'admin', password: '1234' };
 export const authService = {
   async restore() {
@@ -9,13 +9,18 @@ export const authService = {
     try {
       const session = JSON.parse(stored);
       return session?.username === CREDENTIALS.username ? { username: session.username } : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   },
   async login(username, password) {
-    if (username !== CREDENTIALS.username || password !== CREDENTIALS.password) throw new Error('Usuario o contraseña incorrectos.');
+    if (username !== CREDENTIALS.username || password !== CREDENTIALS.password)
+      throw new Error('Usuario o contraseña incorrectos.');
     const user = { username: CREDENTIALS.username };
     await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(user));
     return user;
   },
-  async logout() { await AsyncStorage.removeItem(SESSION_KEY); },
+  async logout() {
+    await AsyncStorage.removeItem(SESSION_KEY);
+  },
 };

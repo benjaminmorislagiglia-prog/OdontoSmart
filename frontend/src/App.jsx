@@ -30,13 +30,49 @@ export default function App() {
             <Route path="/pacientes/:id/editar" element={<PacienteFormPage />} />
             <Route path="/agenda" element={<AgendaPage />} />
             <Route path="/configuracion" element={<SettingsPage />} />
-            {[['/odontologos','odontologos'],['/odontologos/catalogo-especialidades','especialidades'],['/historia-clinica','historias'],['/estados-turno','estados'],['/odontologos/especialidades','asociaciones'],['/empleados','empleados'],['/pacientes/direcciones','direcciones']].map(([path,key]) => <Route key={path} path={path} element={<ClinicEntityPage key={key} config={clinicPages[key]}/>} />)}
-            <Route path="/consultorios" element={<Navigate to="/agenda" replace />} />
-            <Route path="/especialidades" element={<Navigate to="/odontologos/catalogo-especialidades" replace />} />
-            <Route path="/odontologos/empleados" element={<Navigate to="/empleados" replace />} />
-            {activeModules.filter(item => !['/empleados', '/dashboard', '/pacientes','/agenda','/odontologos','/especialidades','/historia-clinica','/estados-turno','/configuracion'].includes(item.path)).map(item => (
-              <Route key={item.path} path={item.path} element={<PendingPage title={item.title} />} />
+            {[
+              ['/odontologos', 'odontologos'],
+              ['/odontologos/catalogo-especialidades', 'especialidades'],
+              ['/historia-clinica', 'historias'],
+              ['/estados-turno', 'estados'],
+              ['/odontologos/especialidades', 'asociaciones'],
+              ['/empleados', 'empleados'],
+              ['/pacientes/direcciones', 'direcciones'],
+            ].map(([path, key]) => (
+              <Route
+                key={path}
+                path={path}
+                element={<ClinicEntityPage key={key} config={clinicPages[key]} />}
+              />
             ))}
+            <Route path="/consultorios" element={<Navigate to="/agenda" replace />} />
+            <Route
+              path="/especialidades"
+              element={<Navigate to="/odontologos/catalogo-especialidades" replace />}
+            />
+            <Route path="/odontologos/empleados" element={<Navigate to="/empleados" replace />} />
+            {activeModules
+              .filter(
+                (item) =>
+                  ![
+                    '/empleados',
+                    '/dashboard',
+                    '/pacientes',
+                    '/agenda',
+                    '/odontologos',
+                    '/especialidades',
+                    '/historia-clinica',
+                    '/estados-turno',
+                    '/configuracion',
+                  ].includes(item.path),
+              )
+              .map((item) => (
+                <Route
+                  key={item.path}
+                  path={item.path}
+                  element={<PendingPage title={item.title} />}
+                />
+              ))}
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
