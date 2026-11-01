@@ -14,7 +14,9 @@
           "cameraPermission": "OdontoSmart necesita acceder a la cámara para tomar la foto del paciente.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-status-bar",
+      "expo-font"
     ],
     "ios": {
       "supportsTablet": true
