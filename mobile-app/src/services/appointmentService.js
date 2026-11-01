@@ -1,32 +1,40 @@
-import { appointments } from '../mocks/appointments';
-import { patients } from '../mocks/patients';
+import { request, requestList } from './api';
 import { dateKey } from '../utils/dates';
-const localAppointments = appointments.map(item => ({ ...item }));
-export const appointmentStates = ['Pendiente', 'Confirmado', 'Cancelado', 'Atendido'];
-export function availableTransitions(status) {
-  if (status === 'Pendiente') return ['Confirmado', 'Cancelado'];
-  if (status === 'Confirmado') return ['Atendido', 'Cancelado'];
-  return [];
+
+function appointmentFromDTO(dto) {
+  return {
+    id: String(dto.idTurno), patientId: String(dto.idPaciente),
+    date: dto.fecha, time: dto.hora.slice(0, 5),
+    patient: dto.paciente, dentist: dto.odontologo, room: dto.consultorio,
+    status: dto.estado || 'Sin estado', statusId: dto.idEstadoTurno,
+    allowedStateIds: dto.estadosPermitidos || [],
+  };
 }
-function expand(item) {
-  if (!item) return null;
-  const patient = patients.find(patient => patient.id === item.patientId);
-  return { ...item, patient: patient?.name || 'Paciente sin identificar', phone: patient?.phone || '' };
+
+export function availableTransitions(appointment, states) {
+  return states.filter(state => appointment.allowedStateIds.includes(state.id));
 }
+
 export const appointmentService = {
-  async listToday() { return appointmentService.listByDate(dateKey()); },
-  async listByDate(date) {
-    return localAppointments.filter(item => item.date === date).sort((a, b) => a.time.localeCompare(b.time)).map(expand);
+  async list(options = {}) {
+    return (await requestList('/api/Turnos', options)).map(appointmentFromDTO);
   },
-  async getById(id) { return expand(localAppointments.find(item => item.id === id)); },
-  async listByPatient(id) {
-    return localAppointments.filter(item => item.patientId === id).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)).map(expand);
+  async listToday(options = {}) { return appointmentService.listByDate(dateKey(), options); },
+  async listByDate(date, options = {}) {
+    return (await appointmentService.list(options)).filter(item => item.date === date);
   },
-  async updateStatus(id, status) {
-    const appointment = localAppointments.find(item => item.id === id);
-    if (!appointment) throw new Error('El turno no está disponible.');
-    if (!availableTransitions(appointment.status).includes(status)) throw new Error('El estado del turno cambió. Volvé a consultar el detalle.');
-    appointment.status = status;
-    return expand(appointment);
+  async listByPatient(id, options = {}) {
+    return (await appointmentService.list(options)).filter(item => item.patientId === String(id));
+  },
+  async getById(id, options = {}) {
+    return appointmentFromDTO(await request(`/api/Turnos/${encodeURIComponent(id)}`, options));
+  },
+  async states(options = {}) {
+    return (await requestList('/api/estadosturno', options)).map(dto => ({ id: dto.idEstadoTurno, name: dto.nombre }));
+  },
+  async updateStatus(id, stateId) {
+    return request('/api/historialestadoturno', {
+      method: 'POST', body: JSON.stringify({ idTurno: Number(id), idEstadoTurno: Number(stateId) }),
+    });
   },
 };

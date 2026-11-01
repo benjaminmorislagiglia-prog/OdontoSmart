@@ -6,6 +6,16 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "OdontoSmart necesita acceder a tus fotos para elegir la foto del paciente.",
+          "cameraPermission": "OdontoSmart necesita acceder a la cámara para tomar la foto del paciente.",
+          "microphonePermission": false
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true
     },

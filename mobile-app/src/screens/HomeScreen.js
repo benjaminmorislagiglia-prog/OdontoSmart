@@ -1,101 +1,81 @@
-import { ScrollView, Text, View, Pressable } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { appointmentService } from '../services/appointmentService';
-import { patientService } from '../services/patientService';
-import { notificationService } from '../services/notificationService';
-import useResource from '../hooks/useResource';
+import { useAppointments, useAppointmentStates, usePatients } from '../hooks/useClinicQueries';
 import { LoadingState, EmptyState, ErrorState } from '../components/FeedbackState';
 import AppButton from '../components/AppButton';
 import AppointmentCard from '../components/AppointmentCard';
+import AnimatedEntrance from '../components/AnimatedEntrance';
 import ScreenHeader from '../components/ScreenHeader';
+import StatusBadge from '../components/StatusBadge';
+import { dateKey } from '../utils/dates';
 import { formatDate } from '../utils/formatters';
-async function loadHome() {
-  const [appointments, patients, notifications] = await Promise.all([
-    appointmentService.listToday(),
-    patientService.list(),
-    notificationService.list(),
-  ]);
-  return { appointments, patients, notifications };
-}
+
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
   const { colors, styles } = useTheme();
-  const { data, loading, error, retry } = useResource(loadHome);
-  if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={retry} />;
+  const appointments = useAppointments();
+  const patients = usePatients();
+  const states = useAppointmentStates();
+  const queries = [appointments, patients, states];
+  const retry = () => { queries.forEach(query => query.refetch()); };
+  if (queries.some(query => query.isPending)) return <LoadingState />;
+  const error = queries.find(query => query.error)?.error;
+  if (error) return <ErrorState message={error.message} onRetry={retry} />;
+  const today = dateKey();
   const time = new Date().toTimeString().slice(0, 5);
-  const nextAppointment = data.appointments.find(
-    (a) => ['Confirmado', 'Pendiente'].includes(a.status) && a.time >= time,
-  );
-  const recentPatients = data.patients
-    .slice()
-    .sort((a, b) => b.lastVisit.localeCompare(a.lastVisit))
-    .slice(0, 3);
-  const unreadNotifications = data.notifications.filter((n) => !n.read);
+  const todayAppointments = appointments.data.filter(item => item.date === today);
+  const upcoming = appointments.data.filter(item =>
+    ['Confirmado', 'Pendiente'].includes(item.status) && `${item.date} ${item.time}` >= `${today} ${time}`,
+  ).slice(0, 3);
+  const recentPatients = patients.data.map(patient => ({
+    ...patient,
+    lastAttendance: appointments.data.filter(item => item.patientId === patient.id && item.status === 'Atendido' &&
+      `${item.date} ${item.time}` <= `${today} ${time}`).at(-1),
+  })).filter(patient => patient.lastAttendance)
+    .sort((a, b) => `${b.lastAttendance.date} ${b.lastAttendance.time}`.localeCompare(`${a.lastAttendance.date} ${a.lastAttendance.time}`)).slice(0, 3);
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <ScreenHeader
-        title={'Hola, ' + user.username}
-        subtitle={formatDate(new Date()) + ' · Tu jornada en la clínica'}
-      />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-        {[
-          ['Turnos de hoy', data.appointments.length],
-          ['Pendientes', data.appointments.filter((a) => a.status === 'Pendiente').length],
-        ].map(([label, value]) => (
-          <View key={label} style={[styles.card, { flexGrow: 1, flexBasis: 130 }]}>
-            <Text style={styles.muted}>{label}</Text>
-            <Text style={[styles.title, { color: colors.primary }]}>{value}</Text>
-          </View>
-        ))}
-      </View>
-      <Text style={styles.sectionTitle}>Accesos rápidos</Text>
-      <AppButton title="Ver agenda" secondary onPress={() => navigation.navigate('Turnos')} />
-      <AppButton title="Ver pacientes" secondary onPress={() => navigation.navigate('Pacientes')} />
-      <Text style={styles.sectionTitle}>Próximo turno</Text>
-      {nextAppointment ? (
-        <AppointmentCard
-          appointment={nextAppointment}
-          onPress={() => navigation.navigate('AppointmentDetail', { id: nextAppointment.id })}
-        />
-      ) : (
-        <EmptyState
-          title="No hay próximos turnos para hoy"
-          message="Podés consultar otras fechas en la agenda."
-        />
-      )}
-      <Text style={styles.sectionTitle}>Pacientes recientes</Text>
-      {recentPatients.map((p) => (
-        <Pressable
-          key={p.id}
-          accessibilityRole="button"
-          style={styles.card}
-          onPress={() => navigation.navigate('PatientDetail', { id: p.id })}
-        >
-          <Text style={styles.label}>{p.name}</Text>
-          <Text style={styles.muted}>
-            Última visita: {formatDate(p.lastVisit)} · {p.coverage}
-          </Text>
-        </Pressable>
-      ))}
-      {!recentPatients.length && <EmptyState title="No hay pacientes recientes" />}
-      <Text style={styles.sectionTitle}>Avisos importantes</Text>
-      {unreadNotifications.length ? (
-        unreadNotifications.slice(0, 2).map((n) => (
-          <View key={n.id} style={styles.card}>
-            <Text style={styles.label}>{n.title}</Text>
-            <Text style={styles.body}>{n.message}</Text>
-          </View>
-        ))
-      ) : (
-        <EmptyState title="Estás al día con los avisos" />
-      )}
-      <AppButton
-        title="Ver notificaciones"
-        secondary
-        onPress={() => navigation.navigate('Notificaciones')}
-      />
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={queries.some(query => query.isRefetching)} onRefresh={retry} tintColor={colors.primary} />}>
+      <AnimatedEntrance>
+        <ScreenHeader title={'Hola, ' + user.username} subtitle={formatDate(new Date())} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+          {[
+            ['Pacientes activos', patients.data.length],
+            ['Turnos de hoy', todayAppointments.length],
+          ].map(([label, value]) => (
+            <View key={label} style={[styles.card, { flexGrow: 1, flexBasis: 130 }]}>
+              <Text style={styles.muted}>{label}</Text>
+              <Text style={[styles.title, { color: colors.primary }]}>{value}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={styles.sectionTitle}>Turnos por estado · Hoy</Text>
+        <View style={styles.card}>
+          {states.data.map(state => (
+            <View key={state.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <StatusBadge status={state.name} />
+              <Text style={styles.label}>{todayAppointments.filter(item => item.statusId === state.id).length}</Text>
+            </View>
+          ))}
+          {!states.data.length && <EmptyState title="No hay estados registrados" />}
+        </View>
+        <Text style={styles.sectionTitle}>Accesos rápidos</Text>
+        <AppButton title="Ver agenda" secondary onPress={() => navigation.navigate('Turnos')} />
+        <AppButton title="Ver pacientes" secondary onPress={() => navigation.navigate('Pacientes')} />
+        <Text style={styles.sectionTitle}>Próximos turnos</Text>
+        {upcoming.length ? upcoming.map(item => (
+          <AppointmentCard key={item.id} appointment={item} onPress={() => navigation.navigate('AppointmentDetail', { id: item.id })} />
+        )) : <EmptyState title="No hay próximos turnos" message="Podés consultar otras fechas en la agenda." />}
+        <Text style={styles.sectionTitle}>Pacientes recientes</Text>
+        {recentPatients.length ? recentPatients.map(patient => (
+          <Pressable key={patient.id} accessibilityRole="button" style={styles.card} onPress={() => navigation.navigate('PatientDetail', { id: patient.id })}>
+            <Text style={styles.label}>{patient.name}</Text>
+            <Text style={styles.muted}>Último turno atendido: {formatDate(patient.lastAttendance.date)}</Text>
+          </Pressable>
+        )) : <EmptyState title="No hay pacientes con turnos atendidos anteriores" />}
+        <AppButton title="Ver avisos de demostración" secondary onPress={() => navigation.navigate('Notificaciones')} />
+      </AnimatedEntrance>
     </ScrollView>
   );
 }

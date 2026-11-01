@@ -1,7 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { FlatList, ScrollView, Text, View, Pressable } from 'react-native';
-import { appointmentService, appointmentStates } from '../services/appointmentService';
-import useResource from '../hooks/useResource';
+import { useAppointments, useAppointmentStates } from '../hooks/useClinicQueries';
 import { LoadingState, EmptyState, ErrorState } from '../components/FeedbackState';
 import AppointmentCard from '../components/AppointmentCard';
 import AppButton from '../components/AppButton';
@@ -15,8 +14,10 @@ export default function AppointmentsScreen({ navigation }) {
   const [day, setDay] = useState(dateKey());
   const [status, setStatus] = useState('Todos');
   const [query, setQuery] = useState('');
-  const loader = useCallback(() => appointmentService.listByDate(day), [day]);
-  const { data, loading, error, retry } = useResource(loader);
+  const appointments = useAppointments();
+  const states = useAppointmentStates();
+  const { data, isPending: loading, error } = appointments;
+  const retry = () => appointments.refetch();
   const filtered = (data || []).filter(
     (a) =>
       a.date === day &&
@@ -31,6 +32,8 @@ export default function AppointmentsScreen({ navigation }) {
       style={styles.screen}
       contentContainerStyle={styles.content}
       data={loading || error ? [] : filtered}
+      refreshing={appointments.isRefetching}
+      onRefresh={retry}
       keyExtractor={(a) => a.id}
       ListHeaderComponent={
         <View style={{ gap: 16 }}>
@@ -51,7 +54,7 @@ export default function AppointmentsScreen({ navigation }) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ gap: 8 }}
           >
-            {['Todos', ...appointmentStates].map((value) => (
+            {['Todos', ...(states.data || []).map(item => item.name)].map((value) => (
               <Pressable
                 key={value}
                 accessibilityRole="button"
@@ -70,6 +73,8 @@ export default function AppointmentsScreen({ navigation }) {
               </Pressable>
             ))}
           </ScrollView>
+          {states.isPending && <Text style={styles.muted}>Cargando estados…</Text>}
+          {states.error && <ErrorState message={states.error.message} onRetry={() => states.refetch()} />}
         </View>
       }
       renderItem={({ item }) => (
@@ -82,7 +87,7 @@ export default function AppointmentsScreen({ navigation }) {
         loading ? (
           <LoadingState />
         ) : error ? (
-          <ErrorState message={error} onRetry={retry} />
+          <ErrorState message={error.message} onRetry={retry} />
         ) : (
           <EmptyState
             title="No hay turnos para mostrar"

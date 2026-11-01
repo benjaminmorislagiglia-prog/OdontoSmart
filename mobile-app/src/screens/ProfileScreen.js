@@ -34,7 +34,7 @@ export default function ProfileScreen() {
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>{profile.name}</Text>
         <Text style={styles.body}>Usuario: {user.username}</Text>
-        <Text style={styles.muted}>{profile.position}</Text>
+        <Text style={styles.muted}>{profile.position} · Perfil de demostración</Text>
       </View>
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Apariencia</Text>

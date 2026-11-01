@@ -37,7 +37,7 @@ export default function NotificationsScreen() {
         <View style={{ gap: 12 }}>
           <ScreenHeader
             title="Notificaciones"
-            subtitle={data.filter((n) => !n.read).length + ' avisos sin leer'}
+            subtitle={'Avisos de demostración, guardados solo en memoria. ' + data.filter((n) => !n.read).length + ' sin leer.'}
           />
           {message ? (
             <Text style={styles.error} accessibilityLiveRegion="assertive">

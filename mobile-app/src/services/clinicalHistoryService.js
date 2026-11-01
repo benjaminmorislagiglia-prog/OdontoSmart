@@ -1,4 +1,10 @@
-import { clinicalHistory } from '../mocks/clinicalHistory';
+import { requestList } from './api';
 export const clinicalHistoryService = {
-  async listByPatient(id) { return clinicalHistory.filter(item => item.patientId === id).sort((a, b) => b.date.localeCompare(a.date)).map(item => ({ ...item })); },
+  async listByPatient(id, options = {}) {
+    return (await requestList(`/api/HistorialClinico/paciente/${encodeURIComponent(id)}`, options)).map(dto => ({
+      id: String(dto.idHistorialClinico), appointmentId: String(dto.idTurno),
+      diagnosis: dto.diagnostico || '', treatment: dto.tratamientosRealizados || '', notes: dto.observaciones || '',
+      annulled: dto.anulado, annulmentReason: dto.motivoAnulacion || '',
+    }));
+  },
 };

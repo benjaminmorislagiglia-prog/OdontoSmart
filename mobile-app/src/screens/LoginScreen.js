@@ -63,7 +63,7 @@ export default function LoginScreen() {
               <Text style={styles.title}>OdontoSmart</Text>
             </View>
             <Text style={styles.title}>Iniciar sesión</Text>
-            <Text style={styles.subtitle}>Gestión de tu clínica, estés donde estéloginStyles.</Text>
+            <Text style={styles.subtitle}>Acceso de demostración · Sin autenticación del servidor.</Text>
             <Text style={styles.muted}>Ambos campos son obligatorios.</Text>
             <Text nativeID="username-label" style={styles.label}>
               Usuario
