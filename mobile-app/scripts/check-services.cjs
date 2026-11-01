@@ -68,9 +68,16 @@ async function main() {
   await session.getState().logout();
   assert.equal(session.getState().user, null);
 
-  const { dateKey, shiftDay } = load('src/utils/dates');
+  const { dateKey, shiftDay, timeKey, calculateAge } = load('src/utils/dates');
   assert.equal(shiftDay('2026-12-31', 1), '2027-01-01');
   assert.equal(shiftDay('2024-03-01', -1), '2024-02-29');
+  assert.equal(timeKey(new Date(2026, 10, 2, 8, 5, 48)), '08:05:00');
+  assert.equal(calculateAge('2000-11-01', new Date(2026, 10, 1)), 26);
+  assert.equal(calculateAge('2000-11-02', new Date(2026, 10, 1)), 25);
+  assert.equal(calculateAge('2026-11-01', new Date(2026, 10, 1, 10)), 0);
+  assert.equal(calculateAge('2027-01-01', new Date(2026, 10, 1)), null);
+  assert.equal(calculateAge('2001-02-29'), null);
+  assert.equal(calculateAge(null), null);
   const api = load('src/services/api');
   const { patientService: patients } = load('src/services/patientService');
   const { appointmentService: agenda, availableTransitions } = load('src/services/appointmentService');
@@ -83,6 +90,15 @@ async function main() {
   let turn = { idTurno: 7, fecha: dateKey(), hora: '09:30:00', idPaciente: 9, paciente: 'Paciente Prueba',
     odontologo: 'Profesional Prueba', consultorio: 'Consultorio 1', idEstadoTurno: 5, estado: 'Pendiente', estadosPermitidos: [11, 19] };
   const changes = [];
+  const newAppointments = [];
+  const dentists = [
+    { idOdontologo: 102, idEmpleado: 4, activo: true, diaAtencion: 'Lunes a viernes', horarioAtencion: '08:00 a 17:00', nroMatricula: 'MP1234' },
+    { idOdontologo: 103, idEmpleado: 5, activo: false },
+    { idOdontologo: 104, idEmpleado: 6, activo: true },
+  ];
+  const employees = [{ idEmpleado: 4, nombre: 'Profesional', apellido: 'Prueba', activo: true },
+    { idEmpleado: 5, nombre: 'Otro', apellido: 'Profesional', activo: true }, { idEmpleado: 6, activo: false }];
+  const rooms = [{ idConsultorio: 3, nombre: 'Consultorio 3' }];
   const calls = [];
   let responder;
   const originalFetch = global.fetch;
@@ -102,8 +118,26 @@ async function main() {
       return response(patient);
     }
     if (pathname === '/api/Pacientes/9') return response(patient);
-    if (pathname === '/api/Turnos') return response([turn]);
+    if (pathname === '/api/Odontologos' || pathname === '/api/Empleados') {
+      assert.equal(new URL(url).searchParams.get('activo'), 'true');
+      return response(pathname === '/api/Odontologos' ? dentists : employees);
+    }
+    if (pathname === '/api/consultorios') return response(rooms);
+    if (pathname === '/api/Turnos' && options.method === 'POST') {
+      const body = JSON.parse(options.body);
+      assert.deepEqual(Object.keys(body).sort(), ['fecha', 'hora', 'idConsultorio', 'idOdontologo', 'idPaciente']);
+      assert.equal(body.idPaciente, 9);
+      assert.equal(body.idOdontologo, 102);
+      assert.equal(body.idConsultorio, 3);
+      assert.match(body.fecha, /^\d{4}-\d{2}-\d{2}$/);
+      assert.equal(body.hora, '14:15:00');
+      const created = { ...turn, idTurno: 8, estado: 'Pendiente', idEstadoTurno: 5, estadosPermitidos: [11, 19], fecha: body.fecha, hora: body.hora, consultorio: 'Consultorio 3' };
+      newAppointments.push(created);
+      return response(created, 201);
+    }
+    if (pathname === '/api/Turnos') return response([turn, ...newAppointments]);
     if (pathname === '/api/Turnos/7') return response(turn);
+    if (pathname === '/api/Turnos/8') return response(newAppointments[0]);
     if (pathname === '/api/estadosturno') return response(states);
     if (pathname === '/api/obrasociales' || pathname === '/api/direcciones' || pathname === '/api/localidades') return response([]);
     if (pathname === '/api/HistorialClinico/paciente/9') return response([{ idHistorialClinico: 3, idTurno: 7, idPaciente: 9, diagnostico: 'Control', tratamientosRealizados: 'Evaluación', anulado: false }]);
@@ -171,6 +205,31 @@ async function main() {
     for (const name of ['Atendido', 'Cancelado', 'Ausente']) assert.deepEqual(availableTransitions({ status: name, allowedStateIds: [] }, catalog), []);
     unsubscribeList(); unsubscribeDetail();
 
+    const booking = await agenda.bookingCatalogs();
+    assert.equal(booking.dentists.length, 1);
+    assert.equal(booking.dentists[0].label, 'Profesional Prueba');
+    assert.match(booking.dentists[0].description, /08:00 a 17:00/);
+    assert.deepEqual(booking.rooms, [{ id: '3', label: 'Consultorio 3' }]);
+    const values = { patientId: '9', dentistId: '102', roomId: '3', date: shiftDay(dateKey(), 2), time: '14:15:00' };
+    const beforeValidation = calls.length;
+    for (const key of Object.keys(values)) await assert.rejects(agenda.create({ ...values, [key]: '' }), /Seleccioná/);
+    assert.equal(calls.length, beforeValidation);
+    const unsubscribeAgenda = listObserver.subscribe(() => {});
+    const create = new reactQuery.MutationObserver(client, queries.useCreateAppointment());
+    const created = await create.mutate(values);
+    assert.equal(created.patientId, '9');
+    assert.equal(created.status, 'Pendiente');
+    assert.equal(client.getQueryData(queries.clinicKeys.appointment('8')).id, '8');
+    assert.ok(client.getQueryData(appointmentsQuery.queryKey).some(item => item.id === '8'));
+    assert.equal((await agenda.getById('8')).date, values.date);
+    assert.equal((await history.listByPatient('9')).length, 1);
+    const countBeforeRejection = client.getQueryData(appointmentsQuery.queryKey).length;
+    responder = () => response('El odontólogo ya tiene un turno en esa fecha y hora.', 409);
+    await assert.rejects(create.mutate(values), error => error.status === 409 && /odontólogo ya tiene/.test(error.message));
+    assert.equal(client.getQueryData(appointmentsQuery.queryKey).length, countBeforeRejection);
+    responder = undefined;
+    unsubscribeAgenda();
+
     assert.equal(await pickPatientPhoto('gallery'), null);
     assert.equal(await pickPatientPhoto('camera'), null);
     permission = { granted: false, canAskAgain: true };
@@ -209,6 +268,7 @@ async function main() {
     responder = () => response([]);
     assert.deepEqual(await patients.list(), []);
     assert.deepEqual(await agenda.list(), []);
+    assert.deepEqual(await history.listByPatient('9'), []);
     const originalTimer = global.setTimeout;
     global.setTimeout = (fn, ms, ...args) => originalTimer(fn, ms === 15000 ? 1 : ms, ...args);
     responder = (_url, options) => new Promise((_resolve, reject) => options.signal.addEventListener('abort', () => reject(new Error('Aborted'))));
@@ -224,7 +284,7 @@ async function main() {
   await notices.markRead('n1');
   assert.equal((await notices.list()).filter(item => !item.read).length, unread - 1);
   await assert.rejects(notices.markRead('missing'));
-  console.log('OK: sesión Zustand, contratos API, consultas, caché e invalidación, estados e historial, errores, listas vacías, permisos, cámara/galería y multipart (pruebas controladas; sin modificar la BD).');
+  console.log('OK: sesión, edad y fechas, pacientes, catálogos de reserva, creación de turnos, payload real, caché e invalidación, estados e historial, errores, listas vacías, permisos y fotos (pruebas controladas; sin modificar la BD).');
 }
 module.exports = { load };
 if (require.main === module) main().catch(error => { console.error(error); process.exitCode = 1; });

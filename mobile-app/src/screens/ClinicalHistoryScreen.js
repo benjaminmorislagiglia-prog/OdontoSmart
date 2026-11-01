@@ -31,7 +31,7 @@ export default function ClinicalHistoryScreen({ route }) {
           <Text style={styles.label}>Observaciones</Text><Text style={styles.body}>{item.notes || 'Sin observaciones.'}</Text>
         </View>
       )}
-      ListEmptyComponent={<EmptyState title="No hay registros clínicos" />}
+      ListEmptyComponent={<EmptyState title="Este paciente no tiene historia clínica registrada." />}
     />
   );
 }

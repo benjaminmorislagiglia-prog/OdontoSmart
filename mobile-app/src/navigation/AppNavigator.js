@@ -13,6 +13,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import AppointmentDetailScreen from '../screens/AppointmentDetailScreen';
 import PatientDetailScreen from '../screens/PatientDetailScreen';
 import ClinicalHistoryScreen from '../screens/ClinicalHistoryScreen';
+import NewAppointmentScreen from '../screens/NewAppointmentScreen';
 import { LoadingState, ErrorState } from '../components/FeedbackState';
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
@@ -101,6 +102,7 @@ export default function AppNavigator() {
               component={ClinicalHistoryScreen}
               options={{ title: 'Historia clínica' }}
             />
+            <Stack.Screen name="NewAppointment" component={NewAppointmentScreen} options={{ title: 'Agendar turno' }} />
           </Stack.Group>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />

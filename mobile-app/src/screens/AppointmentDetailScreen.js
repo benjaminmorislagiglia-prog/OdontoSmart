@@ -30,6 +30,7 @@ export default function AppointmentDetailScreen({ route, navigation }) {
   const allowed = availableTransitions(data, states.data || []);
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      {route.params.created && <Text style={styles.body} accessibilityLiveRegion="polite">Turno agendado correctamente.</Text>}
       <AppointmentCard appointment={data} />
       <AppButton title="Actualizar turno" secondary disabled={update.isPending || appointment.isFetching} onPress={retry} />
       <View style={styles.card}>

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AccessibilityInfo } from 'react-native';
 import { colors as lightColors, darkColors, createThemeStyles } from '../styles/theme';
 const ThemeContext = createContext(null);
 const THEME_STORAGE_KEY = 'odontosmart-theme';
@@ -7,6 +8,15 @@ export function ThemeProvider({ children }) {
   const [mode, setMode] = useState('light');
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
+  const [reduceMotion, setReduceMotion] = useState(true);
+  useEffect(() => {
+    let active = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(value => {
+      if (active) setReduceMotion(value);
+    }).catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => { active = false; subscription.remove(); };
+  }, []);
   useEffect(() => {
     AsyncStorage.getItem(THEME_STORAGE_KEY)
       .then((value) => {
@@ -27,7 +37,7 @@ export function ThemeProvider({ children }) {
   const colors = mode === 'dark' ? darkColors : lightColors;
   const styles = useMemo(() => createThemeStyles(colors), [colors]);
   return (
-    <ThemeContext.Provider value={{ colors, styles, mode, ready, error, changeMode }}>
+    <ThemeContext.Provider value={{ colors, styles, mode, ready, error, changeMode, reduceMotion }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -41,9 +41,15 @@ export default function PatientPhotoEditor({ patient }) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Foto del paciente</Text>
-      {uri ? <Image key={uri} source={{ uri }} accessibilityLabel={draft ? 'Vista previa de la foto seleccionada' : `Foto de ${patient.name}`} style={{ width: 160, height: 160, borderRadius: 16, alignSelf: 'center' }} onError={() => setPreviewError(true)} /> :
-        <Text style={styles.muted}>Sin foto registrada.</Text>}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+        {uri ? <Image key={uri} source={{ uri }} accessibilityLabel={draft ? 'Vista previa de la foto seleccionada' : `Foto de ${patient.name}`} style={{ width: 96, height: 96, borderRadius: 16 }} onError={() => setPreviewError(true)} /> :
+          <View style={{ width: 96, height: 96, alignItems: 'center', justifyContent: 'center' }}><Text style={styles.muted}>Sin foto</Text></View>}
+        <View style={{ flex: 1, gap: 8 }}>
+          <Text accessibilityRole="header" style={styles.title}>{patient.name}</Text>
+          <Text style={styles.body}>DNI: {patient.dni}</Text>
+          <Text style={styles.muted}>{patient.active ? 'Activo' : 'Inactivo'}</Text>
+        </View>
+      </View>
       {previewError && <Text style={styles.error}>No se pudo mostrar la imagen. Podés seleccionar otra foto o volver a consultar el paciente.</Text>}
       <AppButton title="Elegir de la galería" secondary disabled={busy} onPress={() => choose('gallery')} />
       <AppButton title="Tomar fotografía" secondary disabled={busy} onPress={() => choose('camera')} />

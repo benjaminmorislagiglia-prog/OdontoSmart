@@ -52,6 +52,25 @@ export function useAppointmentStates() {
   });
 }
 
+export function useBookingCatalogs() {
+  return useQuery({
+    queryKey: ['booking-catalogs'], staleTime: 60000,
+    queryFn: ({ signal }) => appointmentService.bookingCatalogs({ signal }),
+  });
+}
+
+export function useCreateAppointment() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (/** @type {{ patientId: string, dentistId: string, roomId: string, date: string, time: string }} */ values) => appointmentService.create(values),
+    onSuccess: async appointment => {
+      client.setQueryData(clinicKeys.appointment(appointment.id), appointment);
+      // Agenda, Dashboard y turnos del paciente comparten esta familia de consultas.
+      await client.invalidateQueries({ queryKey: clinicKeys.appointments });
+    },
+  });
+}
+
 export function useClinicalHistory(id) {
   return useQuery({
     queryKey: ['clinical-history', String(id)],
