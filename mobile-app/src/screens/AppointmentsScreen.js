@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { FlatList, ScrollView, Text, View, Pressable } from 'react-native';
+import { FlatList, ScrollView, Text, View } from 'react-native';
 import { useAppointments, useAppointmentStates } from '../hooks/useClinicQueries';
 import { LoadingState, EmptyState, ErrorState } from '../components/FeedbackState';
 import AppointmentCard from '../components/AppointmentCard';
 import AppButton from '../components/AppButton';
+import AnimatedPressable from '../components/AnimatedPressable';
 import AppInput from '../components/AppInput';
 import ScreenHeader from '../components/ScreenHeader';
 import { useTheme } from '../context/ThemeContext';
@@ -55,7 +56,7 @@ export default function AppointmentsScreen({ navigation }) {
             contentContainerStyle={{ gap: 8 }}
           >
             {['Todos', ...(states.data || []).map(item => item.name)].map((value) => (
-              <Pressable
+              <AnimatedPressable
                 key={value}
                 accessibilityRole="button"
                 accessibilityState={{ selected: status === value }}
@@ -70,7 +71,7 @@ export default function AppointmentsScreen({ navigation }) {
                 }}
               >
                 <Text style={styles.label}>{value}</Text>
-              </Pressable>
+              </AnimatedPressable>
             ))}
           </ScrollView>
           {states.isPending && <Text style={styles.muted}>Cargando estados…</Text>}

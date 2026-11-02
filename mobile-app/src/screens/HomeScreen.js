@@ -1,9 +1,10 @@
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAppointments, useAppointmentStates, usePatients } from '../hooks/useClinicQueries';
 import { LoadingState, EmptyState, ErrorState } from '../components/FeedbackState';
 import AppButton from '../components/AppButton';
+import AnimatedPressable from '../components/AnimatedPressable';
 import AppointmentCard from '../components/AppointmentCard';
 import AnimatedEntrance from '../components/AnimatedEntrance';
 import ScreenHeader from '../components/ScreenHeader';
@@ -69,10 +70,10 @@ export default function HomeScreen({ navigation }) {
         )) : <EmptyState title="No hay próximos turnos" message="Podés consultar otras fechas en la agenda." />}
         <Text style={styles.sectionTitle}>Pacientes recientes</Text>
         {recentPatients.length ? recentPatients.map(patient => (
-          <Pressable key={patient.id} accessibilityRole="button" style={styles.card} onPress={() => navigation.navigate('PatientDetail', { id: patient.id })}>
+          <AnimatedPressable key={patient.id} accessibilityRole="button" style={styles.card} onPress={() => navigation.navigate('PatientDetail', { id: patient.id })}>
             <Text style={styles.label}>{patient.name}</Text>
             <Text style={styles.muted}>Último turno atendido: {formatDate(patient.lastAttendance.date)}</Text>
-          </Pressable>
+          </AnimatedPressable>
         )) : <EmptyState title="No hay pacientes con turnos atendidos anteriores" />}
         <AppButton title="Ver avisos de demostración" secondary onPress={() => navigation.navigate('Notificaciones')} />
       </AnimatedEntrance>

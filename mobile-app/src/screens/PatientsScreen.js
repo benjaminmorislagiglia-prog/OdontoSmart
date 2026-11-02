@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { patientCoverage } from '../services/patientService';
 import { usePatients, usePatientCatalogs } from '../hooks/useClinicQueries';
 import { LoadingState, EmptyState, ErrorState } from '../components/FeedbackState';
 import AppInput from '../components/AppInput';
 import ScreenHeader from '../components/ScreenHeader';
 import AppButton from '../components/AppButton';
+import AnimatedPressable from '../components/AnimatedPressable';
 import { useTheme } from '../context/ThemeContext';
 export default function PatientsScreen({ navigation }) {
   const { styles } = useTheme();
@@ -44,7 +45,7 @@ export default function PatientsScreen({ navigation }) {
         </View>
       }
       renderItem={({ item }) => (
-        <Pressable
+        <AnimatedPressable
           accessibilityRole="button"
           onPress={() => navigation.navigate('PatientDetail', { id: item.id })}
           style={styles.card}
@@ -53,7 +54,7 @@ export default function PatientsScreen({ navigation }) {
           <Text style={styles.body}>DNI: {item.dni}</Text>
           <Text style={styles.body}>{item.phone}</Text>
           <Text style={styles.muted}>{patientCoverage(item, catalogs.data)}</Text>
-        </Pressable>
+        </AnimatedPressable>
       )}
       ListEmptyComponent={
         loading ? (

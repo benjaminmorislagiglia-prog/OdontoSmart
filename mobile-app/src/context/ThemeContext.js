@@ -11,10 +11,16 @@ export function ThemeProvider({ children }) {
   const [reduceMotion, setReduceMotion] = useState(true);
   useEffect(() => {
     let active = true;
-    AccessibilityInfo.isReduceMotionEnabled().then(value => {
+    let changed = false;
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', value => {
+      changed = true;
       if (active) setReduceMotion(value);
-    }).catch(() => {});
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    });
+    AccessibilityInfo.isReduceMotionEnabled().then(value => {
+      if (active && !changed) setReduceMotion(value);
+    }).catch(() => {
+      if (active && !changed) setReduceMotion(false);
+    });
     return () => { active = false; subscription.remove(); };
   }, []);
   useEffect(() => {

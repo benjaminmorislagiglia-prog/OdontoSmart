@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -13,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../context/AuthContext';
 import AppButton from '../components/AppButton';
+import AnimatedPressable from '../components/AnimatedPressable';
 import { useTheme } from '../context/ThemeContext';
 
 export default function LoginScreen() {
@@ -106,7 +106,7 @@ export default function LoginScreen() {
                 returnKeyType="go"
                 onSubmitEditing={submit}
               />
-              <Pressable
+              <AnimatedPressable
                 style={loginStyles.eye}
                 disabled={loading}
                 accessibilityRole="button"
@@ -118,7 +118,7 @@ export default function LoginScreen() {
                   size={24}
                   color={colors.primary}
                 />
-              </Pressable>
+              </AnimatedPressable>
             </View>
             {errors.password && (
               <Text style={styles.error} accessibilityLiveRegion="polite">
